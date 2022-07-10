@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>tE1ris</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="Game of the Year 2022">
+	<meta name="keywords" content="Fysik, Teknisk Fysik, Fysiksektionen, Mottagning, 2022, Fadderiet, Te1ris, Tetris, Teknisk Matematik, KTH">
+	<meta name="author" content="Pyro & Cryo">
+	<meta name="theme-color" content="#df3c48">
+	<link rel="icon" type="image/png" href="img/fadderietslogga.png" />
+
+	<script type="text/javascript">
+		if (window.location.hostname && window.location.hostname !== "localhost") {
+			window.onerror = function(message, sourcefile, lineno, colno, error) {
+				alert("Message: " + message + " - Source: " + sourcefile + " Line: " + lineno + ":" + colno);
+				setTimeout(() => {
+					document.body.innerHTML = "Message: " + message + " - Source: " + sourcefile + " Line: " + lineno + ":" + colno; 
+				}, 2000);
+				return true;
+			};
+		}
+  	</script>
+	
+	<!-- Font och ikoner -->
+	<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
+	<!-- Sök ikoner på https://fonts.google.com/icons -->
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+	<link rel="stylesheet" type="text/css" href="style.css">
+
+	<!-- Kelvin -->
+	<script type="text/javascript" src="js/engine/audio.js"></script>
+	<script type="text/javascript" src="js/engine/loader.js"></script>
+	<script type="text/javascript" src="js/engine/splines.js"></script>
+	<script type="text/javascript" src="js/engine/animation.js"></script>
+	<script type="text/javascript" src="js/engine/sequence.js"></script>
+	<script type="text/javascript" src="js/engine/gameArea.js"></script>
+	<script type="text/javascript" src="js/engine/controller.js"></script>
+	<script type="text/javascript" src="js/engine/gameObject.js"></script>
+	<script type="text/javascript" src="js/engine/player.js"></script>
+	<script type="text/javascript" src="js/engine/physics.js"></script>
+	
+	<!-- Objekt etc. specifika för te1ris -->	
+
+	<!-- Controller -->
+	<script type="text/javascript" src="js/jumpController.js"></script>
+</head>
+<body>
+	<!-- Inforutan i toppen -->
+	<div id="topbar" style="height: 64px;">
+		<div id="playButton">
+			<!-- Play -->
+			<span style="font-size: 32px;" class="material-icons-round hidden">&#xe037;</span>
+			<!-- Pause -->
+			<span style="font-size: 32px;" class="material-icons-round">&#xe034;</span>
+		</div>
+		<div id="messageBox">
+			Laddar ...
+		</div>
+		<div id="scoreContainer">
+		</div>
+	</div>
+
+	<!-- Spelområdet -->
+	<div id="gameboardContainer">
+		<canvas id="gameboard" style="transform: translateX(-50%) scale(1);"></canvas>
+	</div>
+
+	<!-- Pausmeny -->
+	<div id="pausemenu" class="menu hidden">
+		<h2>Pausat</h2>
+		<div>Visste du att...</div>
+		<ul id="pausemenuinfo"></ul>
+		<div id="resumeButton" class="menuButton">
+			Fortsätt <span style="font-size: 32px;" class="material-icons-round">&#xe037;</span>
+		</div>
+		<div class="menuButton restartButton">
+			Börja om <span style="font-size: 32px;" class="material-icons-round">&#xe042;</span>
+		</div>
+		<div id="muteButton" class="menuButton">
+			Tysta musik <span style="font-size: 32px;" class="material-icons-round">&#xe04f;</span>
+		</div>
+		<div id="unmuteButton" class="menuButton hidden">
+			Sätt på musik <span style="font-size: 32px;" class="material-icons-round">&#xe050;</span>
+		</div>
+	</div>
+
+	<!-- Game over-meny -->
+	<div id="deathmenu" class="menu hidden">
+		<h2>Åh nej!</h2>
+		<div>
+			Jennie-Jan hoppade av <span id="deathmenuCoursename">kursen</span><span id="deathmenuAttempts" class="hidden"></span>.
+		</div>
+		<div>
+			Med din hjälp samlade hon ihop <span id="deathmenuScore">X</span> poäng.
+		</div>
+		<div id="respawnButton" class="menuButton">
+			Försök igen <span style="font-size: 32px;" class="material-icons-round">&#xe045;</span>
+		</div>
+		<div class="menuButton restartButton">
+			Börja om <span style="font-size: 32px;" class="material-icons-round">&#xe042;</span>
+		</div>
+	</div>
+
+	<!-- Välja program-meny -->
+	<div id="choicemenu" class="menu hidden">
+		<h2>nØllespelet 2021: nØllejump</h2>
+		<div>
+			Välkommen till nØllejump! I detta innovativa* och banbrytande* spel hjälper du Jennie-Jan Kraftvegan genom sitt första år på KTH.
+		</div>
+		<div>
+			Välj vilket program du vill spela:
+		</div>
+		<div id="ctfysButton" class="menuButton">
+			Teknisk Fysik <span style="font-size: 32px;" class="material-icons-round">&#xea4b;</span>
+		</div>
+		<div id="ctmatButton" class="menuButton">
+			Teknisk Matematik <span style="font-size: 32px;" class="material-icons-round">&#xe24a;</span>
+		</div>
+		<div class="footnote">*Enligt utvecklarna själva.</div>
+	</div>
+	<script type="text/javascript">
+		let controller;
+		window.addEventListener("load", () => {
+			JumpController.loadStatusGraph()
+				.then(statusGraph => {
+					controller = new JumpController(statusGraph);
+				}).catch(reason => alert(JSON.stringify(reason)));
+		});
+	</script>
+</body>
+</html>
