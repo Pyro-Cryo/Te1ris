@@ -1,3 +1,4 @@
+const music = Resource.addAsset("audio/myrstacken.mp3", LoopableAudioWithTail);
 
 class TetrisController extends Controller {
 
@@ -10,6 +11,10 @@ class TetrisController extends Controller {
 		this.gameArea.height = TetrisController.HEIGHT_PX;
 		this.gameArea.gridOrigin = GameArea.GRID_ORIGIN_LOWER_LEFT;
 
+		this.stateProperties = [];
+
+		this.barHeight = 64;
+		this.margin = 0;
 	}
 
 	startDrawLoop() {
@@ -22,7 +27,7 @@ class TetrisController extends Controller {
 		super.onAssetsLoaded();
 		this.clearOnDraw = false;
 		this.setMessage(`Laddat klart`);
-		this.setMusic(music);
+		this.setMusic(Resource.getAsset(music));
 		if (this.muted) {
 			this.currentMusic.volume = 0;
 			this.muteButton.classList.add("hidden");
@@ -115,11 +120,11 @@ class TetrisController extends Controller {
 			marginVertical = marginHorizontal;
 		const maxWidthPx = document.documentElement.clientWidth - marginHorizontal * 2;
 		const maxHeightPx = document.documentElement.clientHeight - barHeight - marginVertical * 2;
-		const wScale = maxWidthPx / this.WIDTH_PX;
-		const hScale = maxHeightPx / this.HEIGHT_PX;
+		const wScale = maxWidthPx / this.constructor.WIDTH_PX;
+		const hScale = maxHeightPx / this.constructor.HEIGHT_PX;
 		const scale = Math.min(wScale, hScale);
 
-		this.gameArea.canvas.style = `transform: translateX(-50%) scale(${this.flipX ? (-scale) + ", " + scale : scale});`;
+		this.gameArea.canvas.style = `transform: translateX(-50%) scale(${scale});`;
 		this.canvasContainer.style = `height: ${scale * this.HEIGHT_PX}px;`;
 	}
 
@@ -166,7 +171,7 @@ class TetrisController extends Controller {
 	onPause() {
 		super.onPause();
 		document.getElementById("pausemenu").classList.remove("hidden");
-		this.funFacts();
+		// this.funFacts();
 		if (this.currentMusic)
 			this.currentMusic.pause();
 	}
