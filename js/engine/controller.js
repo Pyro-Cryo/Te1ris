@@ -1,3 +1,4 @@
+
 let _Controller__instances = [];
 class Controller {
     static get _instances() { return _Controller__instances;}
@@ -12,9 +13,27 @@ class Controller {
             throw new Error("Multiple controllers exist: " + this._instances.length);
     }
 
-    constructor(canvas, updateInterval = null, gridWidth = null, gridHeight = null,
-            gridOrigin = GameArea.GRID_ORIGIN_UPPER_LEFT, fastForwardFactor = 3,
-            cancelFFOnPause = false) {
+    static _WIDTH_PX = 576;
+    static _HEIGHT_PX = _WIDTH_PX * 15 / 9;
+    static _STORAGE_PREFIX = "_kelvin";
+
+    static get WIDTH_PX() { return this._WIDTH_PX;}
+    static set WIDTH_PX(value) { this._WIDTH_PX = value;}
+    static get HEIGHT_PX() { return this._HEIGHT_PX;}
+    static set HEIGHT_PX(value) { this._HEIGHT_PX = value;}
+    static get STORAGE_PREFIX() { return this._STORAGE_PREFIX;}
+    static set STORAGE_PREFIX(value) { this._STORAGE_PREFIX = value;}
+
+    constructor(
+            canvas,
+            updateInterval = null,
+            gridWidth = null,
+            gridHeight = null,
+            gridOrigin = GameArea.GRID_ORIGIN_UPPER_LEFT,
+            fastForwardFactor = 3,
+            cancelFFOnPause = false,
+            musicFF = true,
+            ) {
         if (typeof (canvas) === "string")
             canvas = document.getElementById(canvas);
         this.gameArea = new GameArea(canvas, gridWidth, gridHeight, gridOrigin);
@@ -48,6 +67,9 @@ class Controller {
         this.ffbutton = document.getElementById("fastForwardButton");
         this.resetbutton = document.getElementById("resetButton");
         this.difficultySelect = document.getElementById("difficultySelect");
+        this.muteButton = document.getElementById("muteButton");
+        this.unmuteButton document.getElementById("unmuteButton");
+
 
         if (this.playbutton)
             this.playbutton.onclick = this.togglePause.bind(this);
@@ -57,6 +79,12 @@ class Controller {
         }
         if (this.difficultySelect)
             this.difficultySelect.onchange = this.onDifficultyChange.bind(this);
+
+        // Soundtrack stuff.
+        this.currentMusic = null;
+        this.volume = 0.2;
+        this.musicSpeedupOnFF = musicFF;
+        this.muted = !!window.localStorage.getItem(this.constructor.STORAGE_PREFIX + "mute");
 
         // Info field
         this.messageBox = document.getElementById("messageBox");
@@ -88,7 +116,9 @@ class Controller {
         this.drawLoop = null;
     }
 
-    onAssetLoadUpdate(progress, total) {}
+    onAssetLoadUpdate(progress, total) {
+        this.setMessage(`Laddar (${progress}/${total}) ...`);
+    }
     onAssetsLoaded() {}
     onAssetsLoadFailure(reason) {}
 
@@ -118,6 +148,63 @@ class Controller {
             this.isFF = true;
             this.onFastForward();
         }
+    }
+
+    setMusic(source){
+        let isplaying = false;
+        if (this.currentMusic){
+            isplaying = this.currentMusic.paused;
+            this.currentMusic.pause();
+        }
+        this.currentMusic = source;
+        if (this.muted)
+            this.currentMusic.volume = 0;
+        else
+            this.currentMusic.volume = self.volume;
+        if (isplaying)
+            this.onMusicPlay();
+        if (this.isFF)
+            this.currentMusic.playbackRate = Math.sqrt(this.fastForwardFactor);
+    }
+
+    onMusicPlay(){
+        if (this.currentMusic)
+            this.currentMusic.play();
+    }
+    onMusicPause(){
+        if (this.currentMusic)
+            this.currentMusic.pause();
+    }
+    setVolume(volume){
+        if (volume === 0){
+            this.onMute();
+            return;
+        }
+        this.volume = volume;
+        if (this.muted)
+            this.unMute();
+        else if (this.currentMusic)
+            this.currentMusic.volume = volume;
+    }
+    onMute() {
+        if (this.currentMusic)
+            this.currentMusic.volume = 0;
+        if (this.muteButton)
+            this.muteButton.classList.add("hidden");
+        if (this.unmuteButton)
+            this.unmuteButton.classList.remove("hidden");
+        this.muted = true;
+        window.localStorage.setItem(this.constructor.STORAGE_PREFIX + "mute", this.muted);
+    }
+    onUnMute() {
+        if (this.currentMusic)
+            this.currentMusic.volume = this.volume;
+        if (this.muteButton)
+            this.muteButton.classList.add("hidden");
+        if (this.unmuteButton)
+            this.unmuteButton.classList.remove("hidden");
+        this.muted = true;
+        window.localStorage.setItem(this.constructor.STORAGE_PREFIX + "mute", this.muted);
     }
 
     onPlay() {
@@ -157,13 +244,19 @@ class Controller {
     }
 
     onFastForward() {
+        this.isFF = true;
         if (this.ffbutton)
             this.ffbutton.classList.add("keptPressed");
+        if (this.musicSpeedupOnFF && this.currentMusic)
+            this.currentMusic.playbackRate = Math.sqrt(this.fastForwardFactor);
     }
 
     offFastForward() {
+        this.isFF = false;
         if (this.ffbutton)
             this.ffbutton.classList.remove("keptPressed");
+        if (this.musicSpeedupOnFF && this.currentMusic)
+            this.currentMusic.playbackRate = 1
     }
 
     setMessage(message, pureText = true) {
