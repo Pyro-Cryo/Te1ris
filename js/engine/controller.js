@@ -14,7 +14,7 @@ class Controller {
     }
 
     static _WIDTH_PX = 576;
-    static _HEIGHT_PX = _WIDTH_PX * 15 / 9;
+    static _HEIGHT_PX = Controller._WIDTH_PX * 15 / 9;
     static _STORAGE_PREFIX = "_kelvin";
 
     static get WIDTH_PX() { return this._WIDTH_PX;}
@@ -68,7 +68,7 @@ class Controller {
         this.resetbutton = document.getElementById("resetButton");
         this.difficultySelect = document.getElementById("difficultySelect");
         this.muteButton = document.getElementById("muteButton");
-        this.unmuteButton document.getElementById("unmuteButton");
+        this.unmuteButton = document.getElementById("unmuteButton");
 
 
         if (this.playbutton)
@@ -85,6 +85,8 @@ class Controller {
         this.volume = 0.2;
         this.musicSpeedupOnFF = musicFF;
         this.muted = !!window.localStorage.getItem(this.constructor.STORAGE_PREFIX + "mute");
+        this.muteButton.addEventListener("click", e => {this.onMute(); e.preventDefault();});
+        this.unmuteButton.addEventListener("click", e => {this.onUnMute(); e.preventDefault();});
 
         // Info field
         this.messageBox = document.getElementById("messageBox");
@@ -160,7 +162,7 @@ class Controller {
         if (this.muted)
             this.currentMusic.volume = 0;
         else
-            this.currentMusic.volume = self.volume;
+            this.currentMusic.volume = this.volume;
         if (isplaying)
             this.onMusicPlay();
         if (this.isFF)
@@ -200,9 +202,9 @@ class Controller {
         if (this.currentMusic)
             this.currentMusic.volume = this.volume;
         if (this.muteButton)
-            this.muteButton.classList.add("hidden");
+            this.muteButton.classList.remove("hidden");
         if (this.unmuteButton)
-            this.unmuteButton.classList.remove("hidden");
+            this.unmuteButton.classList.add("hidden");
         this.muted = true;
         window.localStorage.setItem(this.constructor.STORAGE_PREFIX + "mute", this.muted);
     }
