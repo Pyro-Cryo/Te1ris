@@ -5,11 +5,8 @@ class TetrisController extends Controller {
 	static _STORAGE_PREFIX = "_te1ris";
 
 	constructor() {
-		super("gameboard");
+		super("gameboard", /*updateInterval=*/1/30, /*gridWidth=*/10, /*gridHeight=*/30);
 		this.canvasContainer = document.getElementById("gameboardContainer");
-		this.gameArea.width = TetrisController.WIDTH_PX;
-		this.gameArea.height = TetrisController.HEIGHT_PX;
-		this.gameArea.gridOrigin = GameArea.GRID_ORIGIN_LOWER_LEFT;
 
 		this.stateProperties = [];
 
@@ -35,6 +32,7 @@ class TetrisController extends Controller {
 		}
 		this.startDrawLoop();
 		this.loadState();
+		this.createLevel();
 		this.setupElements();
 		this.onPause();
 	}
@@ -50,6 +48,11 @@ class TetrisController extends Controller {
 		setInterval(() => this.setMessage("Spelet är trasigt :("), 6000);
 		setTimeout(() => setInterval(() => this.setMessage("Hör av dig till utvecklarna eller Cyberföhs"), 6000), 3000);
 		setTimeout(() => this.setMessage("Spelet är trasigt :("), 1000);
+	}
+
+	createLevel() {
+		let level = new Level();
+		this.registerObject(level);
 	}
 
 	setupElements() {
