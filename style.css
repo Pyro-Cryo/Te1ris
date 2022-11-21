@@ -1,3 +1,8 @@
+/*
+fadderiet-dark: #ae1418;
+fadderiet-light: #ea696d;
+*/
+
 body {
 	margin: 0;
 	font-family: Nunito, sans-serif;
@@ -16,6 +21,7 @@ body.dark {
 	border: 1px solid #aaaaaa;
 	border-top: none;
 	transform-origin: center top;
+	transform: translateX(-50%);
 	position: absolute;
 	left: 50%;
 	transition: transform 0.3s ease-in-out;
@@ -26,7 +32,8 @@ body.dark {
 }
 #topbar {
 	width: 100%;
-	background-color: #df3c48;
+	background-color: #ea696d;
+	color: #ae1418;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;

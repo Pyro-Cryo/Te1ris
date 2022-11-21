@@ -1,4 +1,3 @@
-
 let _Controller__instances = [];
 class Controller {
     static get _instances() { return _Controller__instances;}
@@ -13,16 +12,9 @@ class Controller {
             throw new Error("Multiple controllers exist: " + this._instances.length);
     }
 
-    static _WIDTH_PX = 576;
-    static _HEIGHT_PX = Controller._WIDTH_PX * 15 / 9;
-    static _STORAGE_PREFIX = "_kelvin";
-
-    static get WIDTH_PX() { return this._WIDTH_PX;}
-    static set WIDTH_PX(value) { this._WIDTH_PX = value;}
-    static get HEIGHT_PX() { return this._HEIGHT_PX;}
-    static set HEIGHT_PX(value) { this._HEIGHT_PX = value;}
-    static get STORAGE_PREFIX() { return this._STORAGE_PREFIX;}
-    static set STORAGE_PREFIX(value) { this._STORAGE_PREFIX = value;}
+    static get WIDTH_PX() { return 512; }
+    static get HEIGHT_PX() { return this.WIDTH_PX * 2 / 3; }
+    static get STORAGE_PREFIX() { return "_kelvin"; }
 
     constructor(
             canvas,
@@ -36,6 +28,8 @@ class Controller {
             ) {
         if (typeof (canvas) === "string")
             canvas = document.getElementById(canvas);
+        canvas.width = this.constructor.WIDTH_PX;
+        canvas.height = this.constructor.HEIGHT_PX;
         this.gameArea = new GameArea(canvas, gridWidth, gridHeight, gridOrigin);
         
         this.updateInterval = updateInterval;

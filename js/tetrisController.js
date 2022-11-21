@@ -2,7 +2,7 @@ const music = Resource.addAsset("audio/myrstacken.mp3", LoopableAudioWithTail);
 
 class TetrisController extends Controller {
 
-	static _STORAGE_PREFIX = "_te1ris";
+	static get STORAGE_PREFIX() { return "_te1ris"; }
 
 	constructor() {
 		super("gameboard", /*updateInterval=*/1/30, /*gridWidth=*/10, /*gridHeight=*/30);
