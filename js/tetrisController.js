@@ -204,4 +204,36 @@ class cheat {
 			draw: gameArea => null
 		});
 	}
+
+	static get pickCoords() {
+		const coords = [];
+		controller.canvasContainer.addEventListener('click', e => {
+			coords.push([e.offsetX, e.offsetY]);
+			console.log(coords);
+		});
+	}
+
+	static get testCoords() {
+		const lillie = new Block(controller.level);
+		controller.canvasContainer.addEventListener('mousemove', e => {
+			// Find nearest (ish) seat. Ugly, but works for testing.
+			let currentRow = lillie.level.positions.findIndex(
+				row => row.find(coords => coords !== null)[1] < e.offsetY
+			);
+			if (currentRow === -1)
+				currentRow = lillie.level.numRows - 1;
+			
+			let currentColumn = lillie.level.positions[currentRow].findIndex(
+				coords => coords !== null && coords[0] > e.offsetX
+			);
+			if (currentColumn === -1)
+				currentColumn = lillie.level.positions[currentRow].length - 1;
+
+			while (!lillie.level.isAvailable(currentRow, currentColumn)) {
+				currentColumn = (currentColumn + 1) % lillie.level.positions[currentRow].length
+			}
+			lillie.row = currentRow;
+			lillie.column = currentColumn;
+		});
+	}
 };
