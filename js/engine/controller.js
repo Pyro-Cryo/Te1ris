@@ -12,7 +12,7 @@ class Controller {
             throw new Error("Multiple controllers exist: " + this._instances.length);
     }
 
-    static get WIDTH_PX() { return 512; }
+    static get WIDTH_PX() { return 1024; }
     static get HEIGHT_PX() { return this.WIDTH_PX * 2 / 3; }
     static get STORAGE_PREFIX() { return "_kelvin"; }
 

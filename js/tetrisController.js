@@ -5,10 +5,11 @@ class TetrisController extends Controller {
 	static get STORAGE_PREFIX() { return "_te1ris"; }
 
 	constructor() {
-		super("gameboard", /*updateInterval=*/1/30, /*gridWidth=*/10, /*gridHeight=*/30);
+		super("gameboard", /*updateInterval=*/1/30);
 		this.canvasContainer = document.getElementById("gameboardContainer");
 
 		this.stateProperties = [];
+		this.level = null;
 
 		this.barHeight = 64;
 		this.margin = 0;
@@ -51,8 +52,7 @@ class TetrisController extends Controller {
 	}
 
 	createLevel() {
-		let level = new Level();
-		this.registerObject(level);
+		this.level = new Level();
 	}
 
 	setupElements() {
