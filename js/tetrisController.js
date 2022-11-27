@@ -214,7 +214,7 @@ class cheat {
 	}
 
 	static get testCoords() {
-		const lillie = new Block(controller.level);
+		const lillie = new Block(controller.level.numRows - 1, 4, controller.level);
 		controller.canvasContainer.addEventListener('mousemove', e => {
 			// Find nearest (ish) seat. Ugly, but works for testing.
 			let currentRow = lillie.level.positions.findIndex(

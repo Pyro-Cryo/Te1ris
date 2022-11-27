@@ -271,26 +271,88 @@ class Level extends GameObject {
 		);
 		this.positions = positions;
 		this.numRows = this.positions.length;
+		this.numColumns = positions[0].length;
+		if (!this.positions.every(row => row.length == this.numColumns)) {
+			throw new Error(`Expected all rows to have ${this.numColumns} columns in the positions array`);
+		}
+		this.occupied = positions.map(row => row.map(pos => pos === null));
 
+		// Setup scaling parameters.
 		const firstRow = this.positions[0];
-		const firstColumnInFirstRow = firstRow.findIndex(x => x !== null);
+		const firstColumnInFirstRow = firstRow.findIndex(pos => pos !== null);
 		this.distanceFirstRow = firstRow[firstColumnInFirstRow + 1][0] - firstRow[firstColumnInFirstRow][0];
 
 		const lastRow = this.positions[this.numRows - 1];
-		const firstColumnInLastRow = lastRow.findIndex(x => x !== null);
+		const firstColumnInLastRow = lastRow.findIndex(pos => pos !== null);
 		this.distanceLastRow = lastRow[firstColumnInLastRow + 1][0] - lastRow[firstColumnInLastRow][0];
+
+		this.spawningPosition = [this.numRows - 1, firstColumnInLastRow + 1];
+		this.currentShape = null;
+		this.spawnRandomShape();
+		this.MOVE_TIME = 2000;
+		this.moveTimer = 2000;
+
+		document.body.addEventListener("keydown", this.onKeyDown.bind(this));
 	}
 
-	isAvailable(row, column) {
+	update(delta) {
+		super.update(delta);
+		this.moveTimer -= delta;
+		if (this.moveTimer < 0) {
+			this.moveTimer += this.MOVE_TIME;
+			this.currentShape.fall(/*toBottom=*/false);
+		}
+	}
+
+	onKeyDown(event) {
+		if (this.currentShape === null)
+			return;
+		if (event.code == 'ArrowRight' || event.code == 'KeyD') {
+			this.currentShape.moveRight();
+		} else if (event.code == 'ArrowLeft' || event.code == 'KeyA') {
+			this.currentShape.moveLeft();
+		} else if (event.code == 'Space') {
+			this.currentShape.fall(/*toBottom=*/true);
+		}
+	}
+
+	isFree(row, column) {
+		return this.isInMap(row, column) && !this.occupied[row][column];
+	}
+
+	isInMap(row, column) {
 		return row >= 0
 			&& row < this.numRows
 			&& column >= 0
-			&& column < this.positions[row].length
+			&& column < this.numColumns
 			&& this.positions[row][column] !== null;
 	}
 
 	getScale(row) {
 		const t = row / (this.numRows - 1);
 		return (1 - t) * this.distanceFirstRow / this.distanceLastRow + t;
+	}
+
+	spawnRandomShape() {
+		const ShapeType = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+		this.currentShape = new ShapeType(
+			/*row=*/this.spawningPosition[0],
+			/*column=*/this.spawningPosition[1],
+			/*level=*/this,
+			/*onSettle=*/this.onSettle.bind(this),
+			/*onCannotCreate=*/() => {
+				this.currentShape = null;
+				alert('game over');
+			},
+		);
+	}
+
+	onSettle() {
+		console.log('Shape settled');
+		for (const pos of this.currentShape.getBlockCoords()) {
+			this.occupied[pos[0]][pos[1]] = true;
+		}
+		this.spawnRandomShape();
+		// TODO: Move shape blocks to somewhere, check for completed row, make them fall etc.
 	}
 }
