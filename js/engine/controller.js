@@ -338,11 +338,14 @@ class Controller {
         this.scheduledWorldScroll.y += y;
     }
 
-    draw() {
+    draw(objects = null) {
         if (this.clearOnDraw)
             this.gameArea.clear();
         
-        for (const obj of this.objects)
+        if (objects === null)
+            objects = this.objects;
+
+        for (const obj of objects)
             if (obj.id !== null)
                 obj.draw(this.gameArea);
         

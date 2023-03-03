@@ -13,6 +13,9 @@ class TetrisController extends Controller {
 
 		this.barHeight = 64;
 		this.margin = 0;
+
+		// A background covering the entire board is drawn every frame.
+		this.clearOnDraw = false;
 	}
 
 	startDrawLoop() {
@@ -179,6 +182,39 @@ class TetrisController extends Controller {
 			this.currentMusic.pause();
 	}
 
+	draw() {
+		// TODO: Would be less wasteful to reuse these instead of
+		// throwing them away each draw call.
+		const objectsByRow = {};
+		const objectsWithoutRow = new LinkedList();
+		let rowMin = Infinity;
+		let rowMax = -Infinity;
+		for (const object of this.objects) {
+			if (object.row !== undefined) {
+				rowMin = Math.min(rowMin, object.row);
+				rowMax = Math.max(rowMax, object.row);
+				if (!objectsByRow.hasOwnProperty(object.row)) {
+					objectsByRow[object.row] = [object];
+				} else {
+					objectsByRow[object.row].push(object);
+				}
+			} else {
+				objectsWithoutRow.push(object);
+			}
+		}
+
+		if (rowMax !== -Infinity) {
+			for (let row = rowMax; row >= rowMin; row--) {
+				if (objectsByRow.hasOwnProperty(row)) {
+					for (const object of objectsByRow[row]) {
+						object.draw(this.gameArea);
+					}
+				}
+			}
+		}
+
+		super.draw(objectsWithoutRow);
+	}
 }
 
 class cheat {

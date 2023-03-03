@@ -1,4 +1,3 @@
-const background = Resource.addAsset("img/E1-1024px.jpg");
 const positions = [
 	[
 		null,
@@ -253,6 +252,28 @@ const positions = [
 		null,
 	]
 ];
+const background = Resource.addAsset("img/E1-1024px.jpg");
+const rowImages = positions.map(
+	(_, row) => Resource.addAsset(`img/rows/${row}.png`)
+);
+
+class Row extends GameObject {
+	constructor(index, scale) {
+		super(
+			/*x=*/Controller.instance.gameArea.width / 2,
+			// Correct y position is set below.
+			/*y=*/0,
+			/*image=*/Resource.getAsset(rowImages[index]),
+			/*angle=*/0,
+			/*scale=*/scale,
+			/*register=*/true,
+		);
+		this.y = Controller.instance.gameArea.height - this.height / 2;
+		// Since this is spawned first, it is drawn before anything on
+		// the row in front of it.
+		this.row = index - 1;
+	}
+};
 
 class Level extends GameObject {
 
@@ -269,6 +290,11 @@ class Level extends GameObject {
 			Controller.instance.gameArea.width / this.imageWidth,
 			Controller.instance.gameArea.height / this.imageHeight,
 		);
+		// Create the row objects to be drawn in between blocks at different rows.
+		positions.map((_, row) => new Row(row, this.scale));
+		// Make sure the level object, which defines the background, is drawn first.
+		this.row = positions.length;
+
 		this.positions = positions;
 		this.numRows = this.positions.length;
 		this.numColumns = positions[0].length;
