@@ -333,12 +333,47 @@ class Level extends GameObject {
 	onKeyDown(event) {
 		if (this.currentShape === null)
 			return;
-		if (event.code == 'ArrowRight' || event.code == 'KeyD') {
-			this.currentShape.moveRight();
-		} else if (event.code == 'ArrowLeft' || event.code == 'KeyA') {
-			this.currentShape.moveLeft();
-		} else if (event.code == 'Space') {
-			this.currentShape.fall(/*toBottom=*/true);
+
+		switch (event.code) {
+			case 'ArrowRight':
+			case 'KeyD':
+			case 'Numpad6':
+				this.currentShape.moveRight();
+				break;
+
+			case 'ArrowLeft':
+			case 'KeyA':
+			case 'Numpad4':
+				this.currentShape.moveLeft();
+				break;
+
+			case 'Space':
+			case 'Numpad8':
+				this.currentShape.fall(/*toBottom=*/true);
+				break;
+
+			case 'ArrowDown':
+			case 'KeyS':
+			case 'Numpad2':
+				this.currentShape.fall(/*toBottom=*/false);
+				break;
+
+			case 'ArrowUp':
+			case 'KeyW':
+			case 'KeyE':
+			case 'KeyX':
+			case 'Numpad1':
+			case 'Numpad5':
+			case 'Numpad9':
+				this.currentShape.rotateRight();
+				break;
+
+			case 'KeyQ':
+			case 'KeyZ':
+			case 'Numpad3':
+			case 'Numpad7':
+				this.currentShape.rotateLeft();
+				break;
 		}
 	}
 
