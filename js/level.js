@@ -302,6 +302,7 @@ class Level extends GameObject {
 			throw new Error(`Expected all rows to have ${this.numColumns} columns in the positions array`);
 		}
 		this.occupied = positions.map(row => row.map(pos => pos === null));
+		this.settledBlocks = positions.map(row => row.map(_ => null));
 
 		// Setup scaling parameters.
 		const firstRow = this.positions[0];
@@ -318,6 +319,9 @@ class Level extends GameObject {
 		this.MOVE_TIME = 2000;
 		this.moveTimer = 2000;
 
+		this.CHECK_COMPLETE_ROWS_TIME = 1000;
+		this.checkCompleteRowsTimer = -1;
+
 		document.body.addEventListener("keydown", this.onKeyDown.bind(this));
 	}
 
@@ -327,6 +331,12 @@ class Level extends GameObject {
 		if (this.moveTimer < 0) {
 			this.moveTimer += this.MOVE_TIME;
 			this.currentShape.fall(/*toBottom=*/false);
+		}
+		if (this.checkCompleteRowsTimer >= 0) {
+			this.checkCompleteRowsTimer -= delta;
+			if (this.checkCompleteRowsTimer < 0) {
+				this.checkCompleteRows();
+			}
 		}
 	}
 
@@ -408,12 +418,63 @@ class Level extends GameObject {
 		);
 	}
 
-	onSettle() {
-		console.log('Shape settled');
-		for (const pos of this.currentShape.getBlockCoords()) {
-			this.occupied[pos[0]][pos[1]] = true;
+	checkCompleteRows() {
+		const clearedRows = [];
+		// Check all rows before having them fall, since they could otherwise
+		// fall in a way that makes them no longer clear.
+		for (let rowToCheck = 0; rowToCheck < this.numRows; rowToCheck++) {
+			if (this.occupied[rowToCheck].every(x => x)) {
+				// Row is full. Clear it.
+				for (let column = 0; column < this.numColumns; column++) {
+					// Seats that are missing are considered occupied, so
+					// only clear the ones that have a block.
+					if (this.settledBlocks[rowToCheck][column] !== null) {
+						this.settledBlocks[rowToCheck][column].despawn();
+						this.settledBlocks[rowToCheck][column] = null;
+						this.occupied[rowToCheck][column] = false;
+					}
+				}
+				clearedRows.push(rowToCheck);
+			}
 		}
+
+		// Blocks on higher rows should move one row down.
+		let blockWasMoved = false;
+		for (let i = clearedRows.length - 1; i >= 0; i--) {
+			const clearedRow = clearedRows[i];
+			for (let column = 0; column < this.numColumns; column++) {
+				if (!this.occupied[clearedRow][column]) {
+					for (let fallingRow = clearedRow + 1; fallingRow < this.numRows; fallingRow++) {
+						const block = this.settledBlocks[fallingRow][column];
+						if (block !== null) {
+							this.settledBlocks[fallingRow - 1][column] = block;
+							this.settledBlocks[fallingRow][column] = null;
+							this.occupied[fallingRow - 1][column] = true;
+							this.occupied[fallingRow][column] = false;
+							block.row -= 1;
+							blockWasMoved = true;
+						}
+					}
+				}
+			}
+		}
+
+		// If any blocks have moved due to the clearing, new rows may have filled.
+		// Schedule a new check in a little while (instead of checking it again
+		// directly) so that the user can see what happens.
+		if (blockWasMoved && this.checkCompleteRowsTimer < 0)
+			this.checkCompleteRowsTimer = this.CHECK_COMPLETE_ROWS_TIME;
+	}
+
+	onSettle() {
+		// console.log('Shape settled');
+		for (const block of this.currentShape.blocks) {
+			this.occupied[block.row][block.column] = true;
+			this.settledBlocks[block.row][block.column] = block;
+		}
+		this.currentShape.blocks = [];
+		this.currentShape.despawn();
+		this.checkCompleteRows();
 		this.spawnRandomShape();
-		// TODO: Move shape blocks to somewhere, check for completed row, make them fall etc.
 	}
 }

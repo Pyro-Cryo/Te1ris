@@ -33,16 +33,17 @@ function addToPositionArray(arr, rowDelta, columnDelta) {
 }
 
 function rotateArrayAround(arr, pivotX, pivotY, clockwise) {
-    if (clockwise)
+    if (clockwise) {
         return arr.map(pos => [
             pivotX + pos[1] - pivotY,
             pivotY - (pos[0] - pivotX)
         ]);
-    else
+    } else {
         return arr.map(pos => [
             pivotX - (pos[1] - pivotY),
             pivotY + pos[0] - pivotX
         ]);
+    }
 }
 
 /**
@@ -102,7 +103,8 @@ class Shape extends GameObject {
 
     getBlockCoords() {
         return addToPositionArray(
-            this.blockCoordsRelative, this.row, this.column);
+            this.blockCoordsRelative, this.row, this.column
+        );
     }
 
     _move(columnDelta) {
@@ -116,16 +118,16 @@ class Shape extends GameObject {
     }
     
     moveLeft() {
-        console.log('Moving to the left');
+        // console.log('Moving to the left');
         this._move(-1);
     }
     moveRight() {
-        console.log('Moving to the right');
+        // console.log('Moving to the right');
         this._move(1);
     }
 
     fall(toBottom = false) {
-        console.log('Falling', toBottom ? 'to bottom' : '1 row');
+        // console.log('Falling', toBottom ? 'to bottom' : '1 row');
         let potentialNewCoords = addToPositionArray(
             this.blockCoordsRelative, this.row - 1, this.column);
         if (toBottom) {
