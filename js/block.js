@@ -1,14 +1,26 @@
-const lillie = Resource.addAsset("img/lillie.png");
+const FADDER_GROUPS = [
+    // Mapp, antal filer (1.png-N.png) i mappen.
+    ["fjadrande", 5],
+    ["fohsare", 9],
+    ["gamlingar", 4]
+];
+const FADDER_IMAGES = new Map(
+    FADDER_GROUPS.map(spec => [
+        spec[0],
+        new Array(spec[1]).fill(0).map(
+            (_, i) => Resource.addAsset(`img/faddrar/${spec[0]}/${i+1}.png`)
+        )
+    ])    
+);
 
 class Block extends GameObject {
-    static get image() { return Resource.getAsset(lillie); }
     static get scale() { return 0.05; }
 
     /**
      * @param {Level} level 
      */
-    constructor(row, column, level) {
-        super(0, 0);
+    constructor(row, column, level, image) {
+        super(0, 0, image);
         this.row = row;
         this.column = column;
         this.level = level;
@@ -46,6 +58,8 @@ function rotateArrayAround(arr, pivotX, pivotY, clockwise) {
     }
 }
 
+let next_group = 0;
+
 /**
  * https://en.wikipedia.org/wiki/Tetromino#One-sided_tetrominoes
  */
@@ -81,9 +95,20 @@ class Shape extends GameObject {
             onCannotCreate();
             return;
         }
-
+        const [group, numImages] = FADDER_GROUPS[next_group++];
+        next_group = next_group % FADDER_GROUPS.length;
+        const imageIndices = new Array(numImages).fill(0).map((_, i) => i);
         this.blocks = blockCoords.map(
-            pos => new Block(pos[0], pos[1], this.level)
+            pos => {
+                const imageIndex = imageIndices.length > 1 ? imageIndices.splice(Math.floor(Math.random() * imageIndices.length), 1)[0] : imageIndices[0];
+
+                return new Block(
+                    pos[0],
+                    pos[1],
+                    this.level,
+                    Resource.getAsset(FADDER_IMAGES.get(group)[imageIndex]),
+                );
+            }
         );
     }
     
