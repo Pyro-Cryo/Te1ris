@@ -58,8 +58,6 @@ function rotateArrayAround(arr, pivotX, pivotY, clockwise) {
     }
 }
 
-let next_group = 0;
-
 /**
  * https://en.wikipedia.org/wiki/Tetromino#One-sided_tetrominoes
  */
@@ -95,8 +93,7 @@ class Shape extends GameObject {
             onCannotCreate();
             return;
         }
-        const [group, numImages] = FADDER_GROUPS[next_group++];
-        next_group = next_group % FADDER_GROUPS.length;
+        const [group, numImages] = FADDER_GROUPS[Math.floor(Math.random() * FADDER_GROUPS.length)];
         const imageIndices = new Array(numImages).fill(0).map((_, i) => i);
         this.blocks = blockCoords.map(
             pos => {
