@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * Represents an object with a sprite that can be rotated, scaled or otherwise updated.
  */
@@ -18,8 +20,8 @@ class PrerenderedObject {
 		this.angle = angle === null ? this.constructor.angle : angle;
 		this.scale = scale === null ? this.constructor.scale : scale;
 		this.angleDeltaDegrees = angleDeltaDegrees === null ? this.constructor.angleDeltaDegrees : angleDeltaDegrees;
-		this._mirror = false;
 		this.alpha = 1;
+		// this._mirror = false;
 		// this.mirror = false;
 
 		this._imageDirty = true;
@@ -56,15 +58,15 @@ class PrerenderedObject {
 		return this._angle;
 	}
 
-	set mirror(value) {
-		if (this._mirror === value)
-			return;
-		this._mirror = value;
-		this._imageDirty = true;
-	}
-	get mirror() {
-		return this._mirror;
-	}
+	// set mirror(value) {
+	// 	if (this._mirror === value)
+	// 		return;
+	// 	this._mirror = value;
+	// 	this._imageDirty = true;
+	// }
+	// get mirror() {
+	// 	return this._mirror;
+	// }
 
 	get width() {
 		if (this._imageDirty)

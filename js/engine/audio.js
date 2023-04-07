@@ -1,3 +1,5 @@
+"use strict";
+
 class LoopableAudio extends Audio {
     constructor(src = "", loop = true, volume = 0.3, bufferLength = 0.15) {
         super(src);

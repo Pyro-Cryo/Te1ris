@@ -1,3 +1,5 @@
+"use strict";
+
 let _Resource__loadedAssets = new Map();
 let _Resource__registeredAssets = new Map();
 let _Resource__assetsDirty = false;

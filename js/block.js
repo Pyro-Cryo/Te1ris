@@ -1,3 +1,5 @@
+"use strict";
+
 const FADDER_GROUPS = [
     // Mapp, antal filer (1.png-N.png) i mappen.
     ["fjadrande", 5],

@@ -1,3 +1,5 @@
+"use strict";
+
 let _Splines_pascalTriangle = [[1], [1, 1]];
 let _Splines_ENDPOINT_SAME = 0;
 let _Splines_ENDPOINT_EXTRAPOLATE = 1;
@@ -50,10 +52,8 @@ class Splines {
     }
 
     static get ENDPOINT_SAME() { return _Splines_ENDPOINT_SAME;}
-	static set ENDPOINT_SAME(value) { _Splines_ENDPOINT_SAME = value;}
-    static get ENDPOINT_EXTRAPOLATE() { return _Splines_ENDPOINT_EXTRAPOLATE;}
-	static set ENDPOINT_EXTRAPOLATE(value) { _Splines_ENDPOINT_EXTRAPOLATE = value;}
-
+	static get ENDPOINT_EXTRAPOLATE() { return _Splines_ENDPOINT_EXTRAPOLATE;}
+	
     /**
      * Extrapolate one step from two given points.
      * @param {Number} point1 
@@ -149,16 +149,11 @@ class Splines {
     // }
 
     static get DERIVATIVE_MIDPOINT() { return _Splines_DERIVATIVE_MIDPOINT;}
-	static set DERIVATIVE_MIDPOINT(value) { _Splines_DERIVATIVE_MIDPOINT = value;}
-    static get DERIVATIVE_BACKWARD() { return _Splines_DERIVATIVE_BACKWARD;}
-	static set DERIVATIVE_BACKWARD(value) { _Splines_DERIVATIVE_BACKWARD = value;}
-    static get DERIVATIVE_FORWARD() { return _Splines_DERIVATIVE_FORWARD;}
-	static set DERIVATIVE_FORWARD(value) { _Splines_DERIVATIVE_FORWARD = value;}
-    static get DERIVATIVE_OUT() { return _Splines_DERIVATIVE_OUT;}
-	static set DERIVATIVE_OUT(value) { _Splines_DERIVATIVE_OUT = value;}
-    static get DERIVATIVE_ZERO() { return _Splines_DERIVATIVE_ZERO;}
-	static set DERIVATIVE_ZERO(value) { _Splines_DERIVATIVE_ZERO = value;}
-
+	static get DERIVATIVE_BACKWARD() { return _Splines_DERIVATIVE_BACKWARD;}
+	static get DERIVATIVE_FORWARD() { return _Splines_DERIVATIVE_FORWARD;}
+	static get DERIVATIVE_OUT() { return _Splines_DERIVATIVE_OUT;}
+	static get DERIVATIVE_ZERO() { return _Splines_DERIVATIVE_ZERO;}
+	
     /**
      * Cubic Hermite interpolation along the provided path.
      * See https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Interpolation_on_the_unit_interval_with_matched_derivatives_at_endpoints

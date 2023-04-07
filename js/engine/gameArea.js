@@ -1,3 +1,5 @@
+"use strict";
+
 let _GameArea__GRID_ORIGIN_REVERSE_X = 0b01;
 let _GameArea__GRID_ORIGIN_REVERSE_Y = 0b10;
 let _GameArea_GRID_ORIGIN_UPPER_LEFT = 0;
@@ -7,18 +9,12 @@ let _GameArea_GRID_ORIGIN_LOWER_RIGHT = _GameArea__GRID_ORIGIN_REVERSE_X | _Game
 
 class GameArea {
     static get _GRID_ORIGIN_REVERSE_X() { return _GameArea__GRID_ORIGIN_REVERSE_X;}
-	static set _GRID_ORIGIN_REVERSE_X(value) { _GameArea__GRID_ORIGIN_REVERSE_X = value;}
-    static get _GRID_ORIGIN_REVERSE_Y() { return _GameArea__GRID_ORIGIN_REVERSE_Y;}
-	static set _GRID_ORIGIN_REVERSE_Y(value) { _GameArea__GRID_ORIGIN_REVERSE_Y = value;}
-    static get GRID_ORIGIN_UPPER_LEFT() { return _GameArea_GRID_ORIGIN_UPPER_LEFT;}
-	static set GRID_ORIGIN_UPPER_LEFT(value) { _GameArea_GRID_ORIGIN_UPPER_LEFT = value;}
-    static get GRID_ORIGIN_LOWER_LEFT() { return _GameArea_GRID_ORIGIN_LOWER_LEFT;}
-	static set GRID_ORIGIN_LOWER_LEFT(value) { _GameArea_GRID_ORIGIN_LOWER_LEFT = value;}
-    static get GRID_ORIGIN_UPPER_RIGHT() { return _GameArea_GRID_ORIGIN_UPPER_RIGHT;}
-	static set GRID_ORIGIN_UPPER_RIGHT(value) { _GameArea_GRID_ORIGIN_UPPER_RIGHT = value;}
-    static get GRID_ORIGIN_LOWER_RIGHT() { return _GameArea_GRID_ORIGIN_LOWER_RIGHT;}
-	static set GRID_ORIGIN_LOWER_RIGHT(value) { _GameArea_GRID_ORIGIN_LOWER_RIGHT = value;}
-
+	static get _GRID_ORIGIN_REVERSE_Y() { return _GameArea__GRID_ORIGIN_REVERSE_Y;}
+	static get GRID_ORIGIN_UPPER_LEFT() { return _GameArea_GRID_ORIGIN_UPPER_LEFT;}
+	static get GRID_ORIGIN_LOWER_LEFT() { return _GameArea_GRID_ORIGIN_LOWER_LEFT;}
+	static get GRID_ORIGIN_UPPER_RIGHT() { return _GameArea_GRID_ORIGIN_UPPER_RIGHT;}
+	static get GRID_ORIGIN_LOWER_RIGHT() { return _GameArea_GRID_ORIGIN_LOWER_RIGHT;}
+	
     constructor(canvas, gridWidth, gridHeight, gridOrigin = GameArea.GRID_ORIGIN_UPPER_LEFT) {
         this.canvas = canvas;
         /** @type {CanvasRenderingContext2D} */

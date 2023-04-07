@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * Basklass för att skapa (spawna) sekvenser av GameObjects.
  */

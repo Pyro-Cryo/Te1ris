@@ -1,3 +1,5 @@
+"use strict";
+
 const music = Resource.addAsset("audio/myrstacken.mp3", LoopableAudioWithTail);
 
 class TetrisController extends Controller {

@@ -1,3 +1,5 @@
+"use strict";
+
 class BasicAnimation {
     constructor(obj = null, interpolation = Splines.interpolateLinear.bind(Splines)) {
         this.obj = obj;

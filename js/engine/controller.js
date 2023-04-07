@@ -1,3 +1,5 @@
+"use strict";
+
 let _Controller__instances = [];
 class Controller {
     static get _instances() { return _Controller__instances;}
