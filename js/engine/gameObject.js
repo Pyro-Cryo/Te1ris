@@ -140,7 +140,6 @@ class PrerenderedObject {
 }
 
 class GameObject extends PrerenderedObject {
-		// Access through to physics object
 
 	constructor(x, y, image = null, angle = null, scale = null, register = true) {
 		super(image, angle, scale);
@@ -148,7 +147,7 @@ class GameObject extends PrerenderedObject {
 		this.y = y;
 		this.id = null;
 
-		this.physics = new PhysicsNull(this);	// Alla gameobjects har ett physics object, men default är ingen fysik.
+		// this.physics = new PhysicsNull(this);	// Alla gameobjects har ett physics object, men default är ingen fysik.
 
 		this.despawnTimer = -1;
 
@@ -156,10 +155,10 @@ class GameObject extends PrerenderedObject {
 			this.register();
 	}
 
-	get vx() { return this.physics.vx; }
-	set vx(v) { this.physics.vx = v; }
-	get vy() { return this.physics.vy; }
-	set vy(v) { this.physics.vy = v; }
+	// get vx() { return this.physics.vx; }
+	// set vx(v) { this.physics.vx = v; }
+	// get vy() { return this.physics.vy; }
+	// set vy(v) { this.physics.vy = v; }
 	
 	collisionCheckRectangular(other) {
 		return Math.abs(this.x - other.x) <= (this.width + other.width) / 2 && Math.abs(this.y - other.y) <= (this.height + other.height) / 2;
@@ -171,7 +170,7 @@ class GameObject extends PrerenderedObject {
 			if (this.despawnTimer <= 0)
 				this.despawn();
 		}
-		this.physics.move(delta);
+		// this.physics.move(delta);
 	}
 
 	translate(dx, dy){
