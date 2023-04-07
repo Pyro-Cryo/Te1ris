@@ -404,6 +404,17 @@ class Controller {
         }
         this.layers = [];
     }
+
+    /**
+     * Gets the objects as a flattened array. Not optimized,
+     * intended for debugging only.
+     */
+    get objects() {
+        return this.layers.reduce(
+            (previous, current) => previous.concat(current.toArray()),
+            /*initialValue=*/[]
+        );
+    }
 }
 
 // A doubly linked list used to store objects
