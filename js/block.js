@@ -63,16 +63,16 @@ function addToPositionArray(arr, rowDelta, columnDelta) {
     return arr.map(pos => [pos[0] + rowDelta, pos[1] + columnDelta]);
 }
 
-function rotateArrayAround(arr, pivotX, pivotY, clockwise) {
+function rotateArrayAround(arr, rowPivot, columnPivot, clockwise) {
     if (clockwise) {
         return arr.map(pos => [
-            pivotX + pos[1] - pivotY,
-            pivotY - (pos[0] - pivotX)
+            rowPivot - (pos[1] - columnPivot),
+            columnPivot + pos[0] - rowPivot
         ]);
     } else {
         return arr.map(pos => [
-            pivotX - (pos[1] - pivotY),
-            pivotY + pos[0] - pivotX
+            rowPivot + pos[1] - columnPivot,
+            columnPivot - (pos[0] - rowPivot)
         ]);
     }
 }
@@ -81,10 +81,16 @@ function rotateArrayAround(arr, pivotX, pivotY, clockwise) {
  * https://en.wikipedia.org/wiki/Tetromino#One-sided_tetrominoes
  */
 class Shape extends GameObject {
+    /**
+     * Array of [row, column] coordinates relative to the shape's origin.
+     */
     static get blockCoords() {
         throw new Error('Not implemented in base class');
     }
-    pivotPoints(rotation) {
+    /**
+     * Array of [row, column] coordinates relative to the shape's origin.
+     */
+    pivotPoints() {
         throw new Error('Not implemented in base class');
     }
 
@@ -191,18 +197,18 @@ class Shape extends GameObject {
     _rotate(clockwise) {
         const num_directions = 4;
         const offsets = [[0, 0], [-1, 0], [0, 1], [0, -1]];
-        for (const [offsetX, offsetY] of offsets) {
-            for (const [pivotX, pivotY] of this.pivotPoints(this.rotation)) {
+        for (const [rowOffset, columnOffset] of offsets) {
+            for (const [rowPivot, columnPivot] of this.pivotPoints(this.rotation)) {
                 const newCoordsRelative = rotateArrayAround(
                     this.blockCoordsRelative,
-                    pivotX,
-                    pivotY,
+                    rowPivot,
+                    columnPivot,
                     clockwise
                 );
                 const newCoords = addToPositionArray(
                     newCoordsRelative,
-                    this.row + offsetX,
-                    this.column + offsetY
+                    this.row + rowOffset,
+                    this.column + columnOffset
                 );
 
                 if (this.allFree(newCoords)) {
@@ -229,7 +235,7 @@ class ShapeI extends Shape {
     static get blockCoords() {
         return [[0, -1], [0, 0], [0, 1], [0, 2]];
     }
-    pivotPoints(rotation) {
+    pivotPoints() {
         return [[0.5, 0.5]];
     }
 }
@@ -238,7 +244,7 @@ class ShapeO extends Shape {
     static get blockCoords() {
         return [[0, 0], [0, 1], [-1, 0], [-1, 1]];
     }
-    pivotPoints(rotation) {
+    pivotPoints() {
         return [[-0.5, 0.5]];
     }
 }
@@ -247,7 +253,7 @@ class ShapeT extends Shape {
     static get blockCoords() {
         return [[0, -1], [0, 0], [0, 1], [-1, 0]];
     }
-    pivotPoints(rotation) {
+    pivotPoints() {
         return [[0, 0]];
     }
 }
@@ -256,7 +262,7 @@ class ShapeJ extends Shape {
     static get blockCoords() {
         return [[0, -1], [0, 0], [0, 1], [-1, 1]];
     }
-    pivotPoints(rotation) {
+    pivotPoints() {
         return [[0, 0]];
     }
 }
@@ -265,7 +271,7 @@ class ShapeL extends Shape {
     static get blockCoords() {
         return [[0, -1], [0, 0], [0, 1], [-1, -1]];
     }
-    pivotPoints(rotation) {
+    pivotPoints() {
         return [[0, 0]];
     }
 }
@@ -274,7 +280,7 @@ class ShapeS extends Shape {
     static get blockCoords() {
         return [[-1, -1], [-1, 0], [0, 0], [0, 1]];
     }
-    pivotPoints(rotation) {
+    pivotPoints() {
         return [[0, 0]];
     }
 }
@@ -283,7 +289,7 @@ class ShapeZ extends Shape {
     static get blockCoords() {
         return [[0, -1], [0, 0], [-1, 0], [-1, 1]];
     }
-    pivotPoints(rotation) {
+    pivotPoints() {
         return [[0, 0]];
     }
 }
