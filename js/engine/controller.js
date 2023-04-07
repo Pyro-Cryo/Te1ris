@@ -7,6 +7,9 @@ class Controller {
     static get isSingleInstance() {
         return this._instances.length === 1;
     }
+    /**
+     * @type {Controller}
+     */
     static get instance() {
         if (this.isSingleInstance)
             return this._instances[0];
@@ -27,7 +30,7 @@ class Controller {
             fastForwardFactor = 3,
             cancelFFOnPause = false,
             musicFF = true,
-            ) {
+    ) {
         if (typeof (canvas) === "string")
             canvas = document.getElementById(canvas);
         canvas.width = this.constructor.WIDTH_PX;
@@ -50,10 +53,11 @@ class Controller {
         this.drawLoop = null;
         // The id of the next registered object
         this.idCounter = 0;
-        // All objects which receive update calls
-        this.objects = new LinkedList();
-        // Objects which are drawn over all others
-        this.delayedRenderObjects = [];
+        /**
+         * Layers holding all objects that receive update and draw calls
+         * @type {LinkedList[]}
+         */
+        this.layers = [];
         this.clearOnDraw = true;
 
         this.scheduledWorldScroll = {x: 0, y: 0};
@@ -308,24 +312,24 @@ class Controller {
         if (this._useAnimationFrameForUpdate && this.isFF)
             delta *= this._fastForwardFactor;
 
-        // Setting an object's id to null indicates it is to be destroyed
-        for (const obj of this.objects.filterIterate(obj => obj.id !== null))
-            if (obj.update !== undefined)
-                obj.update(delta);
-
-        // Objects with delayed rendering are updated as usual,
-        // but the separate list tracking them must also be kept clean from null-id objects
-        for (let i = 0; i < this.delayedRenderObjects.length; i++) {
-            if (this.delayedRenderObjects[i].id === null) {
-                this.delayedRenderObjects = this.delayedRenderObjects.filter(o => o.id !== null);
-                break;
+        for (const layer of this.layers) {
+            // Setting an object's id to null indicates it is to be destroyed
+            for (const obj of layer.filterIterate(obj => obj.id !== null)) {
+                if (obj.update !== undefined)
+                    obj.update(delta);
             }
         }
 
-        if (this.scheduledWorldScroll.x !== 0 || this.scheduledWorldScroll.y !== 0){
-            for (const obj of this.objects)
-                if (obj.id !== null)
-                    obj.translate(-this.scheduledWorldScroll.x, this.scheduledWorldScroll.y);
+        if (this.scheduledWorldScroll.x !== 0 || this.scheduledWorldScroll.y !== 0) {
+            for (const layer of this.layers) {
+                for (const obj of layer) {
+                    if (obj.id !== null)
+                        obj.translate(
+                            -this.scheduledWorldScroll.x,
+                            this.scheduledWorldScroll.y
+                        );
+                }
+            }
                 
             this.scheduledWorldScroll.x = 0;
             this.scheduledWorldScroll.y = 0;
@@ -340,41 +344,65 @@ class Controller {
         this.scheduledWorldScroll.y += y;
     }
 
-    draw(objects = null) {
+    draw() {
         if (this.clearOnDraw)
             this.gameArea.clear();
-        
-        if (objects === null)
-            objects = this.objects;
 
-        for (const obj of objects)
-            if (obj.id !== null)
-                obj.draw(this.gameArea);
-        
-        // I think this effectively draws delayed render objects twice,
-        // since they are included in this.objects as well?
-        for (let i = 0; i < this.delayedRenderObjects.length; i++)
-            if (this.delayedRenderObjects[i].id !== null)
-                this.delayedRenderObjects[i].draw(this.gameArea);
+        for (const layer of this.layers) {
+            for (const obj of layer) {
+                if (obj.id !== null)
+                    obj.draw(this.gameArea);
+            }
+        }
 
         this.drawLoop = window.requestAnimationFrame(this.draw.bind(this));
     }
 
+    ensureLayerExists(layer) {
+        if (layer < 0)
+            throw new Error(`Layer cannot be negative, got: ${layer}`);
+
+        if (layer >= this.layers.length) {
+            this.layers = this.layers.concat(
+                new Array(layer + 1 - this.layers.length).fill(null).map(
+                    () => new LinkedList()
+                )
+            );
+        }
+    }
+
     // Register an object to receive update calls.
     // It should have an update method, a draw method accepting a GameArea, and allow for setting an id
-    registerObject(object, prepend = false, delayedRendering = false) {
-        if (prepend)
-            this.objects.prepend(object);
-        else
-            this.objects.push(object);
+    registerObject(object, layer = 0) {
+        this.ensureLayerExists(layer);
+        this.layers[layer].push(object);
         object.id = this.idCounter++;
-        if (delayedRendering)
-            this.delayedRenderObjects.push(object);
+    }
+
+    changeLayer(object, source, destination) {
+        if (source < 0 || source >= this.layers.length) {
+            throw new Error(`Invalid source layer: ${source} (number of layers is ${this.layers.length})`);
+        }
+        this.ensureLayerExists(destination);
+        if (!this.layers[source].remove(object)) {
+            throw new Error(`Object was not present in the source layer, got source: ${source}`);
+        }
+        this.layers[destination].push(object);
     }
 
     // Make the object stop receiving update calls.
     unregisterObject(object) {
         object.id = null;
+    }
+
+    unregisterAllObjects() {
+        for (const layer of this.layers) {
+            for (const obj of layer) {
+                obj.id = null;
+            }
+            layer.clear();
+        }
+        this.layers = [];
     }
 }
 
@@ -385,6 +413,7 @@ class LinkedList {
         this.last = null;
         this.count = 0;
     }
+
     // Add an object at the end of the list
     push(obj) {
         if (this.first === null) {
@@ -398,6 +427,7 @@ class LinkedList {
         }
         this.count++;
     }
+
     // Add an object at the beginning of the list
     prepend(obj) {
         if (this.first === null) {
@@ -411,10 +441,25 @@ class LinkedList {
         }
         this.count++;
     }
+
+    // Remove the first occurrence of an object from the list. Will iterate
+    // over the entire list in the worst case. Returns true if the object
+    // was present in the list, and false otherwise.
+    remove(obj) {
+        // Iterate backwards since frequently moved objects are likely found near the end.
+        for (let current = this.last; current !== null; current = current.prev) {
+            if (current.obj === obj) {
+                this._remove(current);
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Remove a node from the list
     // Note that this accept a linked list node, not the data itself,
     // which you persumably get by iterating through the list using .next
-    remove(node) {
+    _remove(node) {
         if (node === this.first) {
             this.first = node.next;
             if (this.first === null)
@@ -453,13 +498,17 @@ class LinkedList {
         }
     }
 
+    /**
+     * Iterates over the objects for which the function returns true.
+     * Objects for which the function returns false are removed from the list.
+     */
     *filterIterate(func) {
         for (let current = this.first; current !== null; current = current.next) {
             if (func(current.obj))
                 yield current.obj;
             else {
                 let c = current.prev;
-                this.remove(current);
+                this._remove(current);
                 current = c || this.first;
                 if (current === null)
                     break;

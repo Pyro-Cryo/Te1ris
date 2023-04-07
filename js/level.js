@@ -268,12 +268,10 @@ class Row extends GameObject {
 			/*image=*/Resource.getAsset(rowImages[index]),
 			/*angle=*/0,
 			/*scale=*/scale,
-			/*register=*/true,
+			/*register=*/false,
 		);
 		this.y = Controller.instance.gameArea.height - this.height / 2;
-		// Since this is spawned first, it is drawn before anything on
-		// the row in front of it.
-		this.row = index - 1;
+		Controller.instance.registerObject(this, /*layer=*/2 + positions.length - index);
 	}
 };
 

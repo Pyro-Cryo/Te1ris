@@ -22,11 +22,28 @@ class Block extends GameObject {
      * @param {Level} level 
      */
     constructor(row, column, level, image) {
-        super(0, 0, image);
-        this.row = row;
+        super(0, 0, image, /*angle=*/null, /*scale=*/null, /*register=*/false);
+        this._row = row;
         this.column = column;
         this.level = level;
         this.baseScale = this.scale;
+        Controller.instance.registerObject(this, this.layer);
+    }
+
+    get layer() {
+        return 1 + this.level.numRows - this._row;
+    }
+
+    get row() {
+        return this._row;
+    }
+
+    set row(value) {
+        if (value === this._row)
+            return;
+        const oldLayer = this.layer;
+        this._row = value;
+        Controller.instance.changeLayer(this, oldLayer, this.layer);
     }
 
     rescale() {
