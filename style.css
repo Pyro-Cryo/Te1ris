@@ -1,6 +1,8 @@
 /*
 fadderiet-dark: #ae1418;
+fadderiet-mid: #df3c48;
 fadderiet-light: #ea696d;
+fadderiet-ultralight: #dfb5b8;
 */
 
 body {
@@ -45,35 +47,16 @@ body.dark {
 		margin-left: 1em;
 	}
 
-	#scoreContainer {
-		min-width: 7ex;
-	}
+#scoreContainer {
+	font-size: 12px;
+	text-align: center;
+}
 
-		#scoreContainer.scores1 {
-			font-size: 18px;
-		}
-
-		#scoreContainer.scores2 {
-			font-size: 16px;
-		}
-
-		#scoreContainer.scores3 {
-			font-size: 12px;
-		}
-
-		#scoreContainer div {
-			text-align: right;
-		}
-
-		#scoreContainer img {
-			height: 1em;
-			margin-left: 1ex;
-		}
-
-		#scoreContainer span {
-			min-width: 3.5ex;
-			display: inline-block;
-		}
+#score {
+	font-weight: bold;
+	font-size: 18px;
+	margin-bottom: -5px;
+}
 
 #playButton {
 	border-radius: 10px;
@@ -150,3 +133,74 @@ body.dark {
 		margin-left: 0.5ex;
 		padding-right: 0.4ex;
 	}
+
+
+#levelTracker {
+	width: 125px;
+	border-radius: 14px;
+	background-color: black;
+	padding: 4px 0px;
+	overflow: hidden;
+}
+
+#levelTracker > div {
+	display: flex;
+	justify-content: space-evenly;
+	align-items: center;
+}
+
+#levelTracker div {
+	font-size: 4px;
+	color: white;
+}
+
+#levelTracker .cleared {
+	color: rgb(60, 132, 60);
+}
+
+#levelTracker .current {
+	color: rgb(225, 210, 0);
+}
+
+#levelTracker .special {
+	color: rgb(70, 215, 215);
+}
+
+#levelTracker .danger {
+	color: rgb(255, 72, 72);
+}
+
+#levelTracker .big {
+	font-size: 16px;
+}
+
+#objective {
+	text-align: center;
+}
+
+#objectiveTracker {
+	display: inline-block;
+	padding: 0;
+	position: relative;
+	border: 1px solid #ae1418;
+	border-radius: 14px;
+	background-color: #ae1418;
+	font-size: 12px;
+	overflow: hidden;
+	width: 100px;
+}
+
+#objectiveTracker .progressBar {
+	width: 0%;
+	transition: width 0.5s ease-in-out;
+	background-color: #ea696d;
+	height: 100%;
+}
+
+#objectiveTracker .progressBarLabel {
+	text-align: center;
+	color: white;
+	width: 100%;
+	position: absolute;
+	top: 0;
+}

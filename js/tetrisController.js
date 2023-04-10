@@ -9,6 +9,7 @@ class TetrisController extends Controller {
 	constructor() {
 		super("gameboard", /*updateInterval=*/1/30);
 		this.canvasContainer = document.getElementById("gameboardContainer");
+		this.objective = document.getElementById("objective");
 
 		this.stateProperties = [];
 		this.level = null;
@@ -164,8 +165,16 @@ class TetrisController extends Controller {
 		window.localStorage.removeItem(this.STORAGE_PREFIX + "state");
 	}
 
+	messageIsHidden() {
+		return this.messageBox.classList.contains("hidden");
+	}
+
 	onPlay() {
 		super.onPlay();
+		if (!this.messageIsHidden()) {
+			this.hideMessage();
+			this.objective.classList.remove("hidden");
+		}
 		document.getElementById("pausemenu").classList.add("hidden");
 		if (!this.currentMusic) {
 			this.currentMusic = Resource.getAsset(music);

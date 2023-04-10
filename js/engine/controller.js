@@ -275,7 +275,14 @@ class Controller {
         if (this.messageBox)
             this.messageBox.innerText = "\xa0";
         else
-            console.warn("Tried to clear message, but no message box found: " + message);
+            console.warn("Tried to clear message, but no message box found.");
+    }
+
+    hideMessage() {
+        if (this.messageBox)
+            this.messageBox.classList.add("hidden");
+        else
+            console.warn("Tried to hide message box, but no message box found");
     }
 
     // Clear the canvas and let all objects redraw themselves

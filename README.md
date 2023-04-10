@@ -11,6 +11,7 @@ Tetris i E1
 - [ ] Fixa några specialblock (vanliga faddrar med effekter, typ solglasögon)
     - [ ] Frågvisa Fadderister som hela tiden försöker flytta sig närmare tavlan
     - [ ] Föhsare som gör att rader inte kan clearas förrän Föhsarnas rad clearas (dyker upp som en horisontell ShapeI)
+    - [ ] Alternativt en ensam Föhsare som kommer och sätter sig mitt i 
     - [ ] Fadder med solglasögon som överlever att deras rad clearas en gång (de tappar solglasögonen och clearas som vanligt nästa gång)
     - [ ] "Dryg" fadder som breder ut sig till de två platserna bredvid, om de kan (försök sätta dessa i enblockshål för att de inte ska kunna breda ut sig)
     - [ ] Fadder som råkat ta fel sal, och som reser sig och går efter ett visst antal shapes (jobbigt om de kommer långt ner och skapar hål som inte går att täppa)
