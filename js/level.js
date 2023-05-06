@@ -315,7 +315,8 @@ class Level extends GameObject {
 
 		this.spawningPosition = [this.numRows - 1, firstColumnInLastRow + 1];
 		this.currentShape = null;
-		this.spawnRandomShape();
+		this.objective = new ClearNRowsObjective(this, 1);
+		this.spawnShape();
 		this.MOVE_TIME = 2000;
 		this.moveTimer = 2000;
 
@@ -404,17 +405,21 @@ class Level extends GameObject {
 		return (1 - t) * this.distanceFirstRow / this.distanceLastRow + t;
 	}
 
-	spawnRandomShape() {
-		const ShapeType = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-		this.currentShape = new ShapeType(
+	spawnShape() {
+		let setCurrentShape = true;
+		const spawned = this.objective.spawnShape(
 			/*row=*/this.spawningPosition[0],
 			/*column=*/this.spawningPosition[1],
-			/*level=*/this,
 			/*onCannotCreate=*/() => {
 				this.currentShape = null;
+				setCurrentShape = false;
 				alert('game over');
 			},
 		);
+
+		if (setCurrentShape) {
+			this.currentShape = spawned;
+		}
 	}
 
 	/**
@@ -448,6 +453,7 @@ class Level extends GameObject {
 				if (block.onZapped()) {
 					cleared_columns.push(column);
 				}
+				this.objective.onBlockZapped(block);
 			}
 		}
 		return cleared_columns;
@@ -489,6 +495,7 @@ class Level extends GameObject {
 		const completed_rows = this.getCompleteRows();
 		for (let row of completed_rows) {
 			let updated_columns = this.zapCompletedRow(row);
+			this.objective.onRowCleared(row);
 			while (updated_columns.length > 0 && ++row < this.numRows) {
 				updated_columns = this.triggerFalldown(row, updated_columns);
 			}
@@ -506,10 +513,36 @@ class Level extends GameObject {
 		for (const block of this.currentShape.blocks) {
 			this.occupied[block.row][block.column] = true;
 			this.settledBlocks[block.row][block.column] = block;
+			this.objective.onBlockSettled(block);
 		}
+		this.objective.onShapeSettled(this.currentShape);
 		this.currentShape.blocks = [];
 		this.currentShape.despawn();
 		this.checkCompleteRows();
-		this.spawnRandomShape();
+		this.spawnShape();
+	}
+
+	onObjectiveCompleted() {
+		switch (Math.floor(Math.random() * 4)) {
+			case 0:
+				this.objective = new ClearNRowsObjective(this, Math.floor(Math.random() * 3) + 2);
+				break;
+
+			case 1:
+				this.objective = new ZapNBlocksObjective(this, Math.floor(Math.random() * 4 + 2) * 5);
+				break;
+
+			case 2:
+				this.objective = new SettleNShapes(this, Math.floor(Math.random() * 4 + 2) * 5);
+				break;
+
+			case 3:
+				this.objective = new SettleNShapes(
+					this,
+					Math.floor(Math.random() * 4 + 2),
+				 	/*shapeTypeRestriction=*/SHAPES[Math.floor(Math.random() * SHAPES.length)]
+				);
+				break;
+		}
 	}
 }

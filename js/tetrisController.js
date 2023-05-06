@@ -9,21 +9,33 @@ class TetrisController extends Controller {
 	constructor() {
 		super("gameboard", /*updateInterval=*/1/30);
 		this.canvasContainer = document.getElementById("gameboardContainer");
-		this.objective = document.getElementById("objective");
+		this.objective = {
+			root: document.getElementById("objective"),
+			descriptionShort: document.getElementById("objectiveDescription"),
+			progressBar: document.querySelector("#objectiveTracker > .progressBar"),
+			progressBarLabel: document.getElementById("progress")
+		};
 
 		this.stateProperties = [];
 		this.level = null;
 
 		this.barHeight = 64;
-		this.margin = 0;
+		this.marginHorizontal = 0;
+		this.marginVertical = 0;
 
 		// A background covering the entire board is drawn every frame.
 		this.clearOnDraw = false;
 	}
 
 	startDrawLoop() {
-		this.setCanvasDimensions(this.barHeight, this.margin, this.margin / 2);
-		window.addEventListener("resize", () => this.setCanvasDimensions(this.barHeight, this.margin, this.margin / 2));
+		this.setCanvasDimensions(this.barHeight, this.marginHorizontal, this.marginVertical);
+		window.addEventListener(
+			"resize", () => this.setCanvasDimensions(
+				this.barHeight,
+				this.marginHorizontal,
+				this.marginVertical / 2
+			)
+		);
 		super.startDrawLoop();
 	}
 
@@ -165,6 +177,16 @@ class TetrisController extends Controller {
 		window.localStorage.removeItem(this.STORAGE_PREFIX + "state");
 	}
 
+	setObjectiveShortDescription(message) {
+		this.objective.descriptionShort.innerText = message;
+	}
+
+	setObjectiveProgress(progress) {
+		const rounded = Math.round(100 * Math.min(Math.max(progress, 0), 1));
+		this.objective.progressBar.style.width = rounded + "%";
+		this.objective.progressBarLabel.innerText = rounded;
+	}
+
 	messageIsHidden() {
 		return this.messageBox.classList.contains("hidden");
 	}
@@ -173,7 +195,7 @@ class TetrisController extends Controller {
 		super.onPlay();
 		if (!this.messageIsHidden()) {
 			this.hideMessage();
-			this.objective.classList.remove("hidden");
+			this.objective.root.classList.remove("hidden");
 		}
 		document.getElementById("pausemenu").classList.add("hidden");
 		if (!this.currentMusic) {
@@ -225,7 +247,12 @@ class cheat {
 	}
 
 	static get testCoords() {
-		const lillie = new Block(controller.level.numRows - 1, 4, controller.level);
+		const lillie = new Block(
+			controller.level.numRows - 1,
+			4,
+			controller.level,
+			Resource.getAsset(FADDER_IMAGES.values().next().value[0])
+		);
 		controller.canvasContainer.addEventListener('mousemove', e => {
 			// Find nearest (ish) seat. Ugly, but works for testing.
 			let currentRow = lillie.level.positions.findIndex(
@@ -246,5 +273,25 @@ class cheat {
 			lillie.row = currentRow;
 			lillie.column = currentColumn;
 		});
+	}
+
+	static get sendhelp() {
+		const level = Controller.instance.level;
+		for (const row of [0, 1]) {
+			for (let col = 0; col < level.occupied[row].length; col++) {
+				if (!level.occupied[row][col]) {
+					const block = new Block(
+						row,
+						col,
+						level,
+						Resource.getAsset(FADDER_IMAGES.values().next().value[0])
+					);
+					level.occupied[block.row][block.column] = true;
+					level.settledBlocks[block.row][block.column] = block;
+					level.objective.onBlockSettled(block);
+				}
+			}
+		}
+		level.checkCompleteRows();
 	}
 };
