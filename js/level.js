@@ -422,53 +422,90 @@ class Level extends GameObject {
 		}
 	}
 
-	checkCompleteRows() {
-		const clearedRows = [];
+	/**
+	 * Check all rows to see if any are completed. 
+	 * @returns a list of the row indices that are considered complete. 
+	 */
+	getCompleteRows() {
+		const complete_rows = [];
 		// Check all rows before having them fall, since they could otherwise
 		// fall in a way that makes them no longer clear.
 		for (let rowToCheck = 0; rowToCheck < this.numRows; rowToCheck++) {
 			if (this.occupied[rowToCheck].every(x => x)) {
-				// Row is full. Clear it.
-				this.objective.onRowCleared(rowToCheck);
-				for (let column = 0; column < this.numColumns; column++) {
-					// Seats that are missing are considered occupied, so
-					// only clear the ones that have a block.
-					if (this.settledBlocks[rowToCheck][column] !== null) {
-						this.objective.onBlockZapped(this.settledBlocks[rowToCheck][column]);
-						this.settledBlocks[rowToCheck][column].despawn();
-						this.settledBlocks[rowToCheck][column] = null;
-						this.occupied[rowToCheck][column] = false;
-					}
+				complete_rows.push(rowToCheck);
+			}
+		}
+		return complete_rows;
+	}
+
+	/**
+	 * Zapps the blocks in a row and returns a list of the ones that are now free.
+	 * @param {row_index} Index of the row to zap.
+	 * @returns List of column indices that where actually cleared.
+	 */
+	zapCompletedRow(row_index) {
+		const cleared_columns = []
+		for (let column = 0; column < this.numColumns; column++) {
+			// Seats that are missing are considered occupied, so
+			// only clear the ones that have a block.
+			const block = this.settledBlocks[row_index][column];
+			if (block !== null) {
+				if (block.onZapped()) {
+					cleared_columns.push(column);
 				}
-				clearedRows.push(rowToCheck);
+				this.objective.onBlockZapped(block);
+			}
+		}
+		return cleared_columns;
+	}
+
+	/**
+	 * Trigger blocks in the given row and columns to fall down.
+	 * @param {row_index} The row to update.
+	 * @param {columns} List of column indices to update.
+	 * @returns A list of column indices for the blocks that where moved.
+	 */
+	triggerFalldown(row_index, columns) {
+		let updated_indices = [];
+		if (columns.length > 0) {
+			// Assume the columns are sorted.
+			for (let column = columns[0]; column < columns[columns.length - 1]; column++) {
+				const block = this.settledBlocks[row_index][column];
+				if (block === null) {
+					// If there is no block in this column on this row,
+					// propogate the updates to the row above.
+					updated_indices.push(column);
+				}
+				else if (block.falldown()) {
+					// If the block moves, propogate updates.
+					updated_indices.push(column);
+				}
 			}
 		}
 
-		// Blocks on higher rows should move one row down.
-		let blockWasMoved = false;
-		for (let i = clearedRows.length - 1; i >= 0; i--) {
-			const clearedRow = clearedRows[i];
-			for (let column = 0; column < this.numColumns; column++) {
-				if (!this.occupied[clearedRow][column]) {
-					for (let fallingRow = clearedRow + 1; fallingRow < this.numRows; fallingRow++) {
-						const block = this.settledBlocks[fallingRow][column];
-						if (block !== null) {
-							this.settledBlocks[fallingRow - 1][column] = block;
-							this.settledBlocks[fallingRow][column] = null;
-							this.occupied[fallingRow - 1][column] = true;
-							this.occupied[fallingRow][column] = false;
-							block.row -= 1;
-							blockWasMoved = true;
-						}
-					}
-				}
+		return updated_indices;
+	}
+
+	/**
+	 * Checks for completed rows and triggers block updates for any blocks that
+	 * are affected by a zapped or moved row.
+	 * @returns Nothing.
+	 */
+	checkCompleteRows() {
+		const completed_rows = this.getCompleteRows();
+		for (let row of completed_rows) {
+			let updated_columns = this.zapCompletedRow(row);
+			this.objective.onRowCleared(row);
+			while (updated_columns.length > 0 && ++row < this.numRows) {
+				console.log(row, updated_columns);
+				updated_columns = this.triggerFalldown(row, updated_columns);
 			}
 		}
 
 		// If any blocks have moved due to the clearing, new rows may have filled.
 		// Schedule a new check in a little while (instead of checking it again
 		// directly) so that the user can see what happens.
-		if (blockWasMoved && this.checkCompleteRowsTimer < 0)
+		if (completed_rows.length > 0 && this.checkCompleteRowsTimer < 0)
 			this.checkCompleteRowsTimer = this.CHECK_COMPLETE_ROWS_TIME;
 	}
 
