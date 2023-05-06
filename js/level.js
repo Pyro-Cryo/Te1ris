@@ -490,7 +490,6 @@ class Level extends GameObject {
 		for (let row of completed_rows) {
 			let updated_columns = this.zapCompletedRow(row);
 			while (updated_columns.length > 0 && ++row < this.numRows) {
-				console.log(row, updated_columns);
 				updated_columns = this.triggerFalldown(row, updated_columns);
 			}
 		}
