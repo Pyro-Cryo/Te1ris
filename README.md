@@ -2,7 +2,7 @@
 Tetris i E1
 
 ## TODO
-- [ ] Påssystem för slumpade tetrominos (alla sju kommer i en slumpad ordning, sen i en ny slumpad ordning, etc. istället för att de väljs oberoende av varandra)
+- [x] Påssystem för slumpade tetrominos (alla sju kommer i en slumpad ordning, sen i en ny slumpad ordning, etc. istället för att de väljs oberoende av varandra)
 - [ ] Ta en bättre bild i E1
 - [ ] Animationer för Föhsare + ljungeldsblick när en rad försvinner
 - [ ] Visa vilken nästa tetromino är

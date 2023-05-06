@@ -111,8 +111,8 @@ class Shape extends GameObject {
         this.onSettle = onSettle;
 
         const blockCoords = this.getBlockCoords();
-        console.log(`Spawning ${this.constructor.name} at ${this.row}-${this.column}`);
-        console.log('Block coordinates:', JSON.stringify(blockCoords));
+        // console.log(`Spawning ${this.constructor.name} at ${this.row}-${this.column}`);
+        // console.log('Block coordinates:', JSON.stringify(blockCoords));
 
         if (!this.allFree(blockCoords)) {
             onCannotCreate();
