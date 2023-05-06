@@ -159,7 +159,7 @@ class Shape extends GameObject {
 
         const blockCoords = this.getBlockCoords();
         console.log(`Spawning ${this.constructor.name} at ${this.row}-${this.column}`);
-        console.log('Block coordinates:', blockCoords);
+        console.log('Block coordinates:', JSON.stringify(blockCoords));
 
         if (!this.allFree(blockCoords)) {
             onCannotCreate();
@@ -264,6 +264,8 @@ class Shape extends GameObject {
                         this.rotation + (clockwise ? 1 : num_directions - 1)
                     ) % num_directions;
                     this.setBlockCoords(newCoords);
+                    this.row += rowOffset;
+                    this.column += columnOffset;
                     return true;
                 }
             }
