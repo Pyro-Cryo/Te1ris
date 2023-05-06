@@ -46,6 +46,23 @@ class Block extends GameObject {
         Controller.instance.changeLayer(this, oldLayer, this.layer);
     }
 
+    /**
+     * Move the block to a new position ones it is settled in the level.
+     */
+    move(new_row, new_column) {
+        if (!this.level.isFree(new_row, new_column))
+            throw new Error('Attempted to move to an occupied square.');
+
+        this.level.occupied[this.row][this.column] = false;
+        this.level.settledBlocks[this.row][this.column] = null;
+
+        this.row = new_row;
+        this.column = new_column;
+
+        this.level.occupied[this.row][this.column] = true;
+        this.level.settledBlocks[this.row][this.column] = this;
+    }
+
     rescale() {
         this.scale = this.baseScale * this.level.getScale(this.row);
     }
@@ -57,6 +74,37 @@ class Block extends GameObject {
         this.rescale();
         super.draw(gameArea);
     }
+
+    despawn() {
+        this.level.settledBlocks[this.row][this.column] = null;
+        this.level.occupied[this.row][this.column] = false;
+        super.despawn();
+    }
+
+    /**
+     * Zap the block (clearing it in regular tetris).
+     * @returns true *if the block moved*, false otherwise.
+     */
+    onZapped() {
+        this.despawn();
+        return true;
+    }
+
+    /**
+     * Trigger the block to fall down a row or otherwise do its
+     * thing when a row has been cleared.
+     * @returns True if the block moved, false otherwise.
+     */
+    falldown() {
+        if (this.level.isFree(this.row - 1, this.column)) {
+            this.move(this.row - 1, this.column);
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
 }
 
 function addToPositionArray(arr, rowDelta, columnDelta) {
@@ -101,14 +149,13 @@ class Shape extends GameObject {
      * @param {function} onSettle
      * @param {function} onCannotCreate
      */
-    constructor(row, column, level, onSettle, onCannotCreate) {
+    constructor(row, column, level, onCannotCreate) {
         super(0, 0);
         this.blockCoordsRelative = this.constructor.blockCoords;
         this.rotation = 0;
         this.row = row;
         this.column = column;
         this.level = level;
-        this.onSettle = onSettle;
 
         const blockCoords = this.getBlockCoords();
         console.log(`Spawning ${this.constructor.name} at ${this.row}-${this.column}`);
@@ -185,12 +232,12 @@ class Shape extends GameObject {
                 potentialNewCoords = addToPositionArray(newCoords, -1, 0);
             }
             this.setBlockCoords(newCoords);
-            this.onSettle(this);
+            this.level.onSettle();
         } else if (this.allFree(potentialNewCoords)) {
             this.row -= 1;
             this.setBlockCoords(potentialNewCoords);
         } else {
-            this.onSettle(this);
+            this.level.onSettle();
         }
     }
 
