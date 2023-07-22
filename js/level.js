@@ -439,8 +439,8 @@ class Level extends GameObject {
 	}
 
 	/**
-	 * Zapps the blocks in a row and returns a list of the ones that are now free.
-	 * @param {row_index} Index of the row to zap.
+	 * Zaps the blocks in a row and returns a list of the ones that are now free.
+	 * @param {number} row_index Index of the row to zap.
 	 * @returns List of column indices that where actually cleared.
 	 */
 	zapCompletedRow(row_index) {
@@ -461,25 +461,19 @@ class Level extends GameObject {
 
 	/**
 	 * Trigger blocks in the given row and columns to fall down.
-	 * @param {row_index} The row to update.
-	 * @param {columns} List of column indices to update.
-	 * @returns A list of column indices for the blocks that where moved.
+	 * @param {number} row_index The row to update.
+	 * @param {number[]} columns List of column indices to update.
+	 * @returns A list of column indices for the blocks that were moved.
 	 */
 	triggerFalldown(row_index, columns) {
 		let updated_indices = [];
-		if (columns.length > 0) {
-			// Assume the columns are sorted.
-			for (let column = columns[0]; column < columns[columns.length - 1]; column++) {
-				const block = this.settledBlocks[row_index][column];
-				if (block === null) {
-					// If there is no block in this column on this row,
-					// propogate the updates to the row above.
-					updated_indices.push(column);
-				}
-				else if (block.falldown()) {
-					// If the block moves, propogate updates.
-					updated_indices.push(column);
-				}
+		for (const column of columns) {
+			const block = this.settledBlocks[row_index][column];
+			if (block === null || block.falldown()) {
+				// If there is no block in this column on this row,
+				// or if the block moves,
+				// propagate the updates to the row above.
+				updated_indices.push(column);
 			}
 		}
 
@@ -493,10 +487,19 @@ class Level extends GameObject {
 	 */
 	checkCompleteRows() {
 		const completed_rows = this.getCompleteRows();
-		for (let row of completed_rows) {
-			let updated_columns = this.zapCompletedRow(row);
+
+		// Perform all zappings before any falldowns to ensure blocks are deleted properly.
+		const updated_columns_by_row = new Map();
+		for (const row of completed_rows) {
+			updated_columns_by_row.set(row, this.zapCompletedRow(row));
 			this.objective.onRowCleared(row);
-			while (updated_columns.length > 0 && ++row < this.numRows) {
+		}
+
+		// Perform falldowns from the bottom up, starting from each completed row in reverse order.
+		for (const initialRow of completed_rows.reverse()) {
+			let updated_columns = updated_columns_by_row.get(initialRow);
+			for (let row = initialRow + 1; row < this.numRows; row++) {
+				if (updated_columns.length === 0) break;
 				updated_columns = this.triggerFalldown(row, updated_columns);
 			}
 		}
