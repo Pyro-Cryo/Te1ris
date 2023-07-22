@@ -124,7 +124,9 @@ class Shape extends GameObject {
                 this.row -= 1;
                 potentialNewCoords = addToPositionArray(newCoords, -1, 0);
             }
-            this.setBlockCoords(newCoords);
+            if (newCoords !== null) {
+                this.setBlockCoords(newCoords);
+            }
             this.level.onSettle();
         } else if (this.allFree(potentialNewCoords)) {
             this.row -= 1;
