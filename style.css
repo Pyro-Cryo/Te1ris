@@ -1,8 +1,8 @@
 /*
-fadderiet-dark: #ae1418;
-fadderiet-mid: #df3c48;
-fadderiet-light: #ea696d;
-fadderiet-ultralight: #dfb5b8;
+fadderiet-dark: #441168;
+fadderiet-mid: #723d97;
+fadderiet-light: #9768ac;
+fadderiet-ultralight: #d1a8ce;
 */
 
 body {
@@ -34,8 +34,8 @@ body.dark {
 }
 #topbar {
 	width: 100%;
-	background-color: #ea696d;
-	color: #ae1418;
+	background-color: #9768ac;
+	color: #441168;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -65,10 +65,10 @@ body.dark {
 }
 
 	#playButton:hover {
-		background-color: #dfb5b8;
+		background-color: #d1a8ce;
 	}
 	#playButton:active {
-		color: #df3c48;
+		color: #723d97;
 	}
 
 .menu {
@@ -123,10 +123,10 @@ body.dark {
 	border-radius: 10px;
 }
 	.menuButton:hover {
-		background-color: #df3c48;
+		background-color: #723d97;
 	}
 	.menuButton:active {
-		color: #dfb5b8;
+		color: #d1a8ce;
 	}
 
 	.menuButton > span {
@@ -182,9 +182,9 @@ body.dark {
 	display: inline-block;
 	padding: 0;
 	position: relative;
-	border: 1px solid #ae1418;
+	border: 1px solid #441168;
 	border-radius: 14px;
-	background-color: #ae1418;
+	background-color: #441168;
 	font-size: 12px;
 	overflow: hidden;
 	width: 100px;
@@ -193,7 +193,7 @@ body.dark {
 #objectiveTracker .progressBar {
 	width: 0%;
 	transition: width 0.5s ease-in-out;
-	background-color: #ea696d;
+	background-color: #9768ac;
 	height: 100%;
 }
 
