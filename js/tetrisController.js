@@ -4,6 +4,8 @@ const music = Resource.addAsset("audio/myrstacken.mp3", LoopableAudioWithTail);
 
 class TetrisController extends Controller {
 
+	static get WIDTH_PX() { return 1440;}
+	static get HEIGHT_PX() { return 789;}
 	static get STORAGE_PREFIX() { return "_te1ris"; }
 
 	constructor() {
@@ -243,6 +245,7 @@ class cheat {
 		controller.canvasContainer.addEventListener('click', e => {
 			coords.push([e.offsetX, e.offsetY]);
 			console.log(coords);
+			this.sendhelp;
 		});
 	}
 
@@ -267,7 +270,7 @@ class cheat {
 			if (currentColumn === -1)
 				currentColumn = lillie.level.positions[currentRow].length - 1;
 
-			while (!lillie.level.isAvailable(currentRow, currentColumn)) {
+			while (!lillie.level.isFree(currentRow, currentColumn)) {
 				currentColumn = (currentColumn + 1) % lillie.level.positions[currentRow].length
 			}
 			lillie.row = currentRow;

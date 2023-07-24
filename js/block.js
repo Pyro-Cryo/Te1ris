@@ -16,7 +16,7 @@ const FADDER_IMAGES = new Map(
 );
 
 class Block extends GameObject {
-    static get scale() { return 0.05; }
+    static get scale() { return 0.10; }
 
     /**
      * @param {Level} level 
@@ -64,7 +64,7 @@ class Block extends GameObject {
     }
 
     rescale() {
-        this.scale = this.baseScale * this.level.getScale(this.row);
+        this.scale = this.baseScale * this.level.getScale(this.row, this.column);
     }
 
     draw(gameArea) {
