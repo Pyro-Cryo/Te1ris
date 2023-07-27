@@ -28,6 +28,7 @@ class Block extends GameObject {
         this.level = level;
         this.baseScale = this.scale;
         Controller.instance.registerObject(this, this.layer);
+        this.updatePositionAndRescale();
     }
 
     get layer() {
@@ -63,16 +64,17 @@ class Block extends GameObject {
         this.level.settledBlocks[this.row][this.column] = this;
     }
 
-    rescale() {
+    updatePositionAndRescale() {
+        if (!this.level.isInMap(this.row, this.column))
+            return false;
+        [this.x, this.y] = this.level.positions[this.row][this.column];
         this.scale = this.baseScale * this.level.getScale(this.row, this.column);
+        return true;
     }
 
     draw(gameArea) {
-        if (!this.level.isInMap(this.row, this.column))
-            return;
-        [this.x, this.y] = this.level.positions[this.row][this.column];
-        this.rescale();
-        super.draw(gameArea);
+        if (this.updatePositionAndRescale())
+            super.draw(gameArea);
     }
 
     despawn() {
@@ -105,4 +107,38 @@ class Block extends GameObject {
         }
     }
 
+    spawnFires(num = null) {
+        this.updatePositionAndRescale();
+        num ??= Math.floor(Math.random() * 5) + 7;
+        for (let i = 0; i < num; i++) {
+            new FireParticle(this);
+        }
+    }
+}
+
+
+const fireImage = Resource.addAsset('img/eld.png');
+class FireParticle extends GameObject {
+    static get image() { return Resource.getAsset(fireImage); }
+    static get scale() { return 0.15; }
+
+    /**
+     * @param {Block} block 
+     */
+    constructor(block) {
+        const x = block.x + block.width * (Math.random() - 0.5);
+        const y = block.y + block.height * (Math.random() - 0.5);
+        super(x, y, /*image=*/null, /*angle=*/null, /*scale=*/null, /*register=*/false);
+        this.scale *= block.scale / block.baseScale;
+        const revealAfter = Math.random() * 250 + 250;
+        this.despawnTimer = revealAfter + Math.random() * 500 + 500;
+        this.revealBelow = this.despawnTimer - revealAfter;
+        
+        Controller.instance.registerObject(this, block.layer);
+    }
+
+    draw(gameArea) {
+        if (this.despawnTimer <= this.revealBelow)
+            super.draw(gameArea);
+    }
 }

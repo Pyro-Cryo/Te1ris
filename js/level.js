@@ -294,6 +294,8 @@ const rowPositions = [
 	[680, 215],
 	[680, 199],
 ];
+const ZAPPING_BLOCKS_REMOVED_TIME = 1000;
+const ZAPPING_TOTAL_ANIMATION_TIME = 1500;
 
 class Row extends GameObject {
 	constructor(index, scale) {
@@ -352,6 +354,7 @@ class Level extends GameObject {
 
 		this.CHECK_COMPLETE_ROWS_TIME = 1000;
 		this.checkCompleteRowsTimer = -1;
+		this.zapTimeout = null;
 
 		document.body.addEventListener("keydown", this.onKeyDown.bind(this));
 	}
@@ -430,7 +433,22 @@ class Level extends GameObject {
 			&& this.positions[row][column] !== null;
 	}
 
-	getScale(row, column) {
+	/**
+	 * Gets the scale multiplier for rendering an object at a certain position in
+	 * the lecture hall.
+	 * @param {number} row The row at which the object is located, starting with 0 at the bottom.
+	 * @param {number} column The column at which the object is located, starting with 0 to the left. If not specified, the rightmost column in the row is used.
+	 * @returns The scale multiplier.
+	 */
+	getScale(row, column = null) {
+		if (column === null) {
+			for (let col = this.numColumns - 1; col >= 0; col--) {
+				if (this.isInMap(row, col)) {
+					column = col;
+					break;
+				}
+			}
+		}
 		if (!this.isInMap(row, column))
 			throw new Error(`Invalid position: row ${row}, column ${column}`);
 
@@ -528,29 +546,42 @@ class Level extends GameObject {
 	 * @returns Nothing.
 	 */
 	checkCompleteRows() {
+		// Let the current zapping complete before checking again.
+		if (this.zapTimeout !== null)
+			return;
+
 		const completed_rows = this.getCompleteRows();
+		// Animate the zapping of the blocks.
+		Fohs.zapRows(completed_rows);
 
-		// Perform all zappings before any falldowns to ensure blocks are deleted properly.
-		const updated_columns_by_row = new Map();
-		for (const row of completed_rows) {
-			updated_columns_by_row.set(row, this.zapCompletedRow(row));
-			this.objective.onRowCleared(row);
-		}
+		// Zap and move blocks after a timeout so that the animation looks reasonable.
+		this.zapTimeout = setTimeout(
+			() => {
+				this.zapTimeout = null;
+				// Perform all zappings before any falldowns to ensure blocks are deleted properly.
+				const updated_columns_by_row = new Map();
+				for (const row of completed_rows) {
+					updated_columns_by_row.set(row, this.zapCompletedRow(row));
+					this.objective.onRowCleared(row);
+				}
 
-		// Perform falldowns from the bottom up, starting from each completed row in reverse order.
-		for (const initialRow of completed_rows.reverse()) {
-			let updated_columns = updated_columns_by_row.get(initialRow);
-			for (let row = initialRow + 1; row < this.numRows; row++) {
-				if (updated_columns.length === 0) break;
-				updated_columns = this.triggerFalldown(row, updated_columns);
-			}
-		}
+				// Perform falldowns from the bottom up, starting from each completed row in reverse order.
+				for (const initialRow of completed_rows.reverse()) {
+					let updated_columns = updated_columns_by_row.get(initialRow);
+					for (let row = initialRow + 1; row < this.numRows; row++) {
+						if (updated_columns.length === 0) break;
+						updated_columns = this.triggerFalldown(row, updated_columns);
+					}
+				}
 
-		// If any blocks have moved due to the clearing, new rows may have filled.
-		// Schedule a new check in a little while (instead of checking it again
-		// directly) so that the user can see what happens.
-		if (completed_rows.length > 0 && this.checkCompleteRowsTimer < 0)
-			this.checkCompleteRowsTimer = this.CHECK_COMPLETE_ROWS_TIME;
+				// If any blocks have moved due to the clearing, new rows may have filled.
+				// Schedule a new check in a little while (instead of checking it again
+				// directly) so that the user can see what happens.
+				if (completed_rows.length > 0 && this.checkCompleteRowsTimer < 0)
+					this.checkCompleteRowsTimer = this.CHECK_COMPLETE_ROWS_TIME;
+			},
+			ZAPPING_BLOCKS_REMOVED_TIME,
+		);
 	}
 
 	onSettle() {

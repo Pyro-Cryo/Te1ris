@@ -56,8 +56,8 @@ class Splines {
 	
     /**
      * Extrapolate one step from two given points.
-     * @param {Number} point1 
-     * @param {Number} point2 
+     * @param {Number[]} point1 
+     * @param {Number[]} point2 
      * @param {boolean} backwards 
      */
     static extrapolate(point1, point2, backwards, steps = 1) {

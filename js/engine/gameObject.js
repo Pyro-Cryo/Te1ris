@@ -6,7 +6,7 @@
 class PrerenderedObject {
 	// The object's sprite
 	static get image() { return null; }
-	// The object's sprite's default angle
+	// The object's sprite's default angle, in radians.
 	static get angle() { return 0; }
 	// The minimum angle change for the object to be re-rendered
 	static get angleDeltaDegrees() { return 5; }
