@@ -58,6 +58,7 @@ class Controller {
          * @type {LinkedList[]}
          */
         this.layers = [];
+        this.currentlyChangingLayers = new Map();
         this.clearOnDraw = true;
 
         this.scheduledWorldScroll = {x: 0, y: 0};
@@ -319,6 +320,11 @@ class Controller {
         if (this._useAnimationFrameForUpdate && this.isFF)
             delta *= this._fastForwardFactor;
 
+        for (const [obj, change] of this.currentlyChangingLayers.entries()) {
+            this.changeLayer(obj, change.source, change.destination);
+        }
+        this.currentlyChangingLayers.clear();
+
         for (const layer of this.layers) {
             // Setting an object's id to null indicates it is to be destroyed
             for (const obj of layer.filterIterate(obj => obj.id !== null)) {
@@ -386,15 +392,29 @@ class Controller {
         object.id = this.idCounter++;
     }
 
+    /**
+     * Immediately changes the layer of an object. Prefer scheduleLayerChange() during update calls,
+     * or some objects may miss an update since the lists are modified while they are being iterated over.
+     * @param {GameObject} object 
+     * @param {number} source The layer that the object is currently in.
+     * @param {number} destination The layer that the object should move to.
+     */
     changeLayer(object, source, destination) {
         if (source < 0 || source >= this.layers.length) {
             throw new Error(`Invalid source layer: ${source} (number of layers is ${this.layers.length})`);
         }
-        this.ensureLayerExists(destination);
         if (!this.layers[source].remove(object)) {
             throw new Error(`Object was not present in the source layer, got source: ${source}`);
         }
+        this.ensureLayerExists(destination);
         this.layers[destination].push(object);
+    }
+
+    /**
+     * Schedules a layer change before the next update call.
+     */
+    scheduleLayerChange(object, source, destination) {
+        this.currentlyChangingLayers.set(object, {source: source, destination: destination});
     }
 
     // Make the object stop receiving update calls.
@@ -522,12 +542,13 @@ class LinkedList {
      */
     *filterIterate(func) {
         for (let current = this.first; current !== null; current = current.next) {
-            if (func(current.obj))
+            if (func(current.obj)) {
                 yield current.obj;
+            }
             else {
                 let c = current.prev;
                 this._remove(current);
-                current = c || this.first;
+                current = c ?? this.first;
                 if (current === null)
                     break;
                 else

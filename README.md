@@ -1,10 +1,10 @@
 # Te1ris
-Tetris i E1
+[Tetris i E1](https://pyro-cryo.github.io/Te1ris/)
 
 ## TODO
 - [x] Påssystem för slumpade tetrominos (alla sju kommer i en slumpad ordning, sen i en ny slumpad ordning, etc. istället för att de väljs oberoende av varandra)
-- [ ] Ta en bättre bild i E1
-- [ ] Animationer för Föhsare + ljungeldsblick när en rad försvinner
+- [x] Ta en bättre bild i E1
+- [x] Animationer för Föhsare + ljungeldsblick när en rad försvinner
 - [ ] Visa vilken nästa tetromino är
 - [ ] Poängsystem
 - [ ] Touchkontroller
@@ -20,5 +20,5 @@ Tetris i E1
     - Kan förmodligen baseras på det från campus defence / nollejump
     - Inkludera pauser (bara första gången man spelar?) med lore/förklaring av nästa bricka som dyker upp?
     - Går kanske lite snabbare med tiden också? Tänker att den huvudsakliga svårighetsaspekten är de olika sorternas faddrar dock
-- [ ] Holdsystem för tetrominos (kan sätta den fallande tetrominon åt sidan och byta ut mot en tidigare åsidosatt tetromino)
+- [ ] Holdsystem för tetrominos? (kan sätta den fallande tetrominon åt sidan och byta ut mot en tidigare åsidosatt tetromino)
 - [ ] Fixa så att ShapeI kan rotera från vertikal till horisontell även när den är nära väggarna (förhoppningsvis bara att lägga till en pivot point)

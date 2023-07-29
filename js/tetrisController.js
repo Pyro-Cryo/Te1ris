@@ -297,4 +297,13 @@ class cheat {
 		}
 		level.checkCompleteRows();
 	}
+
+	static get someBlock() {
+		for (const rowOfBlocks of Controller.instance.level.settledBlocks) {
+			for (const block of rowOfBlocks) {
+				if (block !== null)
+					return block;
+			}
+		}
+	}
 };
