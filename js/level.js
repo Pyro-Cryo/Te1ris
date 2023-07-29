@@ -272,6 +272,7 @@ const positions = [
 		null,
 	]
 ];
+const rowWithDoor = positions.findIndex(cols => cols[cols.length - 1] === null);
 const background = Resource.addAsset("img/fisheye/background-1440.jpg");
 const rowImages = positions.map(
 	(_, row) => Resource.addAsset(`img/fisheye/${row}.png`)
@@ -296,6 +297,8 @@ const rowPositions = [
 ];
 const ZAPPING_BLOCKS_REMOVED_TIME = 1000;
 const ZAPPING_TOTAL_ANIMATION_TIME = 1500;
+const AISLE_LEFT = 'AISLE_LEFT';
+const AISLE_RIGHT = 'AISLE_RIGHT';
 
 class Row extends GameObject {
 	constructor(index, scale) {
@@ -431,6 +434,158 @@ class Level extends GameObject {
 			&& column >= 0
 			&& column < this.numColumns
 			&& this.positions[row][column] !== null;
+	}
+
+	/**
+	 * Finds the column index of an aisle, returning actual column indices as-is.
+	 * @param {number} row 
+	 * @param {number | string} columnOrAisle 
+	 * @returns {number}
+	 */
+	_aisleToColumn(row, columnOrAisle) {
+		switch (columnOrAisle) {
+			case AISLE_LEFT:
+				// There are four null seats to the left of the front row. On other rows,
+				// the aisle is the column just outside a valid seat.
+				if (row === 0)
+					return -1;
+				return this.positions[row].findIndex(pos => pos !== null) - 1;
+			case AISLE_RIGHT:
+				return this.positions[row].findLastIndex(pos => pos !== null) + 1;
+			default:
+				return columnOrAisle;
+		}
+	}
+
+	/**
+	 * Extrapolates outside the grid of valid positions to find reasonable positions for missing seats and aisles.
+	 * @param {number} row 
+	 * @param {number | string} column
+	 * @returns {number[]} Position [x, y] of the indicated row and column.
+	 */
+	extrapolatePositionOutsideMap(row, column) {
+		if (!(row >= 0 && row < this.numRows)) {
+			throw new Error(`Invalid row: ${row}`);
+		}
+			
+		const step = column < this.numColumns / 2 ? 1 : -1;
+		let columnInMap = column + step;
+		let numSteps = 1;
+		while (columnInMap < 0 || columnInMap >= this.numColumns || this.positions[row][columnInMap] === null) {
+			columnInMap += step;
+			numSteps++;
+		}
+		return Splines.extrapolate(
+			this.positions[row][columnInMap + step],
+			this.positions[row][columnInMap],
+			/*backwards=*/false,
+			numSteps,
+		);
+	}
+
+	/**
+	 * Gets the positions that a block could walk to in the grid without passing through other blocks.
+	 * @param {number} row The origin row index.
+	 * @param {number | string} columnOrAisle The origin column index, or a special value AISLE_LEFT or AISLE_RIGHT.
+	 */
+	backtrackingMatrixFrom(row, columnOrAisle) {
+		const numColumnsPlus2 = this.numColumns + 2;
+		const minColumnByRow = new Array(this.numRows).fill(0).map((_, r) => this._aisleToColumn(r, AISLE_LEFT));
+		const maxColumnByRow = new Array(this.numRows).fill(0).map((_, r) => this._aisleToColumn(r, AISLE_RIGHT));
+		// Make sure blocks can move between the outer (downwards) and inner (uppwards) aisle on the row with the door.
+		minColumnByRow[rowWithDoor] = minColumnByRow[rowWithDoor - 1];
+		maxColumnByRow[rowWithDoor] = maxColumnByRow[rowWithDoor - 1];
+
+		const isFreeOrValidOutside = (r, c) => (
+			r >= 0
+			&& r < this.numRows
+			&& c >= minColumnByRow[r]
+			&& c <= maxColumnByRow[r]
+			&& (!this.isInMap(r, c) || !this.occupied[r][c])
+		);
+
+		// JS does not have tuples, so we need to encode both coordinates in one value to use it in sets.
+		function toSingleIndex(r, c) {
+			return r * numColumnsPlus2 + c + 1;
+		}
+
+		function fromSingleIndex(index) {
+			const c = (index % numColumnsPlus2) - 1;
+			return [(index - c - 1) / numColumnsPlus2, c];
+		}
+
+		// Matrix containing the coordinates of the tile that should be visited before the indexed one.
+		// Null means unreachable or starting position.
+		const previous = new Array(this.numRows).fill(null).map(_ => new Array(numColumnsPlus2).fill(null));
+		// The tiles whose neighbors have been added to the checking set, and should not be checked again.
+		// Not 100% sure this is actually necessary, `previous` is sort of also used for this purpose.
+		const visited = new Array(this.numRows * numColumnsPlus2).fill(false);
+		const startIndex = toSingleIndex(row, this._aisleToColumn(row, columnOrAisle));
+
+		const toCheck = new Set([startIndex]);
+		for (const currentIndex of toCheck) {
+			if (visited[currentIndex]) continue;
+			visited[currentIndex] = true;
+			const [currentRow, currentColumn] = fromSingleIndex(currentIndex);
+			const neighbors = [
+				[currentRow, currentColumn - 1],
+				[currentRow, currentColumn + 1],
+				[currentRow - 1, currentColumn],
+				[currentRow + 1, currentColumn]
+			];
+
+			for (const [neighborRow, neighborColumn] of neighbors) {
+				const neighborSingleIndex = toSingleIndex(neighborRow, neighborColumn);
+				if (
+					!isFreeOrValidOutside(neighborRow, neighborColumn)  // Skip blocked or out of bounds.
+					|| visited[neighborSingleIndex]  // Skip already visited tiles.
+					|| previous[neighborRow][neighborColumn + 1] !== null  // Skip tiles with shorter paths.
+				)
+					continue;
+				previous[neighborRow][neighborColumn + 1] = [currentRow, currentColumn];
+				toCheck.add(neighborSingleIndex);
+			}
+		}
+
+		return previous;
+	}
+
+	isReachableInBacktrackingMatrix(row, aisleOrColumn, previous) {
+		return previous[row][this._aisleToColumn(row, aisleOrColumn) + 1] !== null;
+	}
+
+	/**
+	 * Gets a path to a row and column coordinate pair from the origin of the backtracking map.
+	 * @param {number} row The destination row to backtrack from.
+	 * @param {number[]} aisleOrColumn The destination column to backtrack from.
+	 * @param {number[][][]} previous The array of arrays that describe shortest paths, as provided by Level.backtrackingMatrixFrom().
+	 * @returns {number[][]} A path in row and column coordinates, which may go outside the map.
+	 */
+	backtrackFrom(row, aisleOrColumn, previous) {
+		const column = this._aisleToColumn(row, aisleOrColumn);
+		const result = [];
+		for (let current = [row, column]; current !== null; current = previous[current[0]][current[1] + 1]) {
+			result.push(current);
+		}
+		return result.reverse();
+	}
+
+	/**
+	 * Converts a path of [row, column] coordinates to [x, y, scale] coordinates.
+	 * @param {number[][]} path 
+	 * @returns {number[][]}
+	 */
+	rowColumnPathToPositionScaleCoordinates(path) {
+		return path.map(pos => {
+			const [row, column] = pos;
+			if (this.isInMap(row, column)) {
+				const [x, y] = this.positions[row][column];
+				return [x, y, this.getScale(row, column)];
+			}
+			const coordsAndScale = this.extrapolatePositionOutsideMap(row, column);
+			coordsAndScale.push(this.getScale(row));
+			return coordsAndScale;
+		});
 	}
 
 	/**
@@ -585,7 +740,6 @@ class Level extends GameObject {
 	}
 
 	onSettle() {
-		// console.log('Shape settled');
 		for (const block of this.currentShape.blocks) {
 			this.occupied[block.row][block.column] = true;
 			this.settledBlocks[block.row][block.column] = block;

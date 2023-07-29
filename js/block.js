@@ -26,13 +26,32 @@ class Block extends GameObject {
         this._row = row;
         this.column = column;
         this.level = level;
+        this._layer = this.rowToLayer(row);
         this.baseScale = this.scale;
+        this.walkingPathRowColumn = null;
+        this.walkingPathXYScale = null;
+        // Walking speed in cells per millisecond
+        this.walkingSpeed = 2 / 1000;
+        this.walkingProgress = 0;
+        // Minimum difference in scale that should cause an update of the block's drawn size.
+        this.walkingScaleMinDelta = 0.04;
         Controller.instance.registerObject(this, this.layer);
         this.updatePositionAndRescale();
     }
 
+    rowToLayer(row) {
+        return 1 + this.level.numRows - row;
+    }
+
     get layer() {
-        return 1 + this.level.numRows - this._row;
+        return this._layer;
+    }
+
+    set layer(value) {
+        if (value === this._layer)
+            return;
+        Controller.instance.scheduleLayerChange(this, this._layer, value);
+        this._layer = value;
     }
 
     get row() {
@@ -42,13 +61,12 @@ class Block extends GameObject {
     set row(value) {
         if (value === this._row)
             return;
-        const oldLayer = this.layer;
         this._row = value;
-        Controller.instance.changeLayer(this, oldLayer, this.layer);
+        this.layer = this.rowToLayer(value);
     }
 
     /**
-     * Move the block to a new position ones it is settled in the level.
+     * Move the block to a new position once it is settled in the level.
      */
     move(new_row, new_column) {
         if (!this.level.isFree(new_row, new_column))
@@ -64,9 +82,38 @@ class Block extends GameObject {
         this.level.settledBlocks[this.row][this.column] = this;
     }
 
+    update(delta) {
+        super.update(delta);
+        if (this.walkingPathRowColumn !== null) {
+            this.walkingProgress += delta * this.walkingSpeed / this.walkingPathRowColumn.length;
+
+            if (this.walkingProgress >= 1) {
+                this.walkingPathRowColumn = null;
+                this.walkingPathXYScale = null;
+                this.layer = this.rowToLayer(this.row);
+                return;
+            }
+
+            // Update the position and scale.
+            let newScale;
+            [this.x, this.y, newScale] = Splines.interpolateHermite(this.walkingProgress, this.walkingPathXYScale);
+            if (Math.abs(this.scale - newScale) >= this.walkingScaleMinDelta) {
+                this.scale = this.baseScale * newScale;
+            }
+
+            // Update the layer. Walking progress is strictly less than 1, thus the index is strictly less than the path length.
+            const walkingProgressAsIndex = Math.floor(this.walkingProgress * this.walkingPathRowColumn.length)
+            const pseudoRow = this.walkingPathRowColumn[walkingProgressAsIndex][0];
+            this.layer = this.rowToLayer(pseudoRow);
+        }
+    }
+
     updatePositionAndRescale() {
+        if (this.walkingPathRowColumn !== null)
+            return true; // Handled in update().
         if (!this.level.isInMap(this.row, this.column))
             return false;
+
         [this.x, this.y] = this.level.positions[this.row][this.column];
         this.scale = this.baseScale * this.level.getScale(this.row, this.column);
         return true;
@@ -113,6 +160,26 @@ class Block extends GameObject {
         for (let i = 0; i < num; i++) {
             new FireParticle(this);
         }
+    }
+
+    // TODO: walkTo/walkPath does not support aisles/outside positions, since move() currently requires positions in the map.
+    walkPath(rowColumnPath) {
+        if (this.walkingPathRowColumn !== null)
+            throw new Error(`Cannot walk path: ${rowColumnPath}, already walking along: ${this.walkingPathRowColumn}`);
+
+        this.walkingPathRowColumn = rowColumnPath;
+        this.walkingPathXYScale = this.level.rowColumnPathToPositionScaleCoordinates(rowColumnPath);
+        this.walkingProgress = 0;
+        const [newRow, newColumn] = rowColumnPath[rowColumnPath.length - 1];
+        this.move(newRow, newColumn);
+    }
+
+    walkTo(row, columnOrAisle) {
+        const matrix = this.level.backtrackingMatrixFrom(this.row, this.column);
+        if (!this.level.isReachableInBacktrackingMatrix(row, columnOrAisle, matrix)) {
+            throw new Error(`No path to [${row}, ${columnOrAisle}] from [${this.row}, ${this.column}] was found`);
+        }
+        this.walkPath(this.level.backtrackFrom(row, columnOrAisle, matrix));
     }
 }
 
