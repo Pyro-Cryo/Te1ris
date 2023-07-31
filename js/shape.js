@@ -39,7 +39,6 @@ class Shape extends GameObject {
      * @param {Number} row
      * @param {Number} column
      * @param {Level} level 
-     * @param {function} onSettle
      * @param {function} onCannotCreate
      */
     constructor(row, column, level, onCannotCreate) {

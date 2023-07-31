@@ -53,7 +53,6 @@ class Objective {
 			/*row=*/row,
 			/*column=*/column,
 			/*level=*/this.level,
-			/*onSettle=*/this.level.onSettle.bind(this.level),
 			/*onCannotCreate=*/onCannotCreate
 		);
 

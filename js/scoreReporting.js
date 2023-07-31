@@ -1,8 +1,4 @@
-const SCORE_MAX = 2000;
-const SCORE_MIN_ON_WIN = 1200;
-const SCORE_REDUCTION_PER_DEATH = 32;
-const SCORE_PARTIAL_MAX = 1000;
-const ENDPOINT_USER = "https://f.kth.se/cyberfohs/user/";
+const SCORE_ENDPOINT = "https://f.kth.se/cyberfohs/set_game_highscore";
 let ApiSettings = null;
 
 class ScoreReporter {
@@ -14,43 +10,40 @@ class ScoreReporter {
         return ApiSettings;
     }
 
-    static currentScore(won) {
-        let score;
-        if (won) {
-            const totalDeaths = Object.keys(controller.stats.deaths).reduce((sum, key) => sum + controller.stats.deaths[key], 0);
-            score = Math.max(SCORE_MIN_ON_WIN, SCORE_MAX - totalDeaths * SCORE_REDUCTION_PER_DEATH);
-        } else {
-            score = SCORE_PARTIAL_MAX * controller.approximateProgress;
-        }
-        return Math.floor(score);
+    static onNoParamsDefault() {
+        console.warn("API-parametrarna är inte definierade, så kan inte rapportera in poängen.");
     }
 
-    static report(won, onSuccess = null, onFail = null, onNoParams = null) {
+    /**
+     * Rapporterar in poängen för spelaren.
+     * @param {number} score 
+     * @param {() => any} onSuccess 
+     * @param {(r: any) => any} onFail 
+     * @param {() => any} onNoParams 
+     * @returns 
+     */
+    static report(score, onSuccess = null, onFail = null, onNoParams = this.onNoParamsDefault) {
         const url = new URL(window.location.href);
         const token = url.searchParams.get("token");
-        const userId = url.searchParams.get("userId");
-        if (!this.apiSettings && token !== null)
+        if (!this.apiSettings && token !== null) {
             this.apiSettings = {
                 token: token,
-                userId: userId
             };
+        }
         
         // alert("API-inställningar: " + JSON.stringify(this.apiSettings));
         if (!this.apiSettings) {
-            console.warn("API-parametrarna är inte definierade, så kan inte rapportera in poängen.");
             if (onNoParams) onNoParams();
             return;
         }
-        // Räkna ut poäng
-        const score = this.currentScore(won);
         console.log("Rapporterar poäng:", score);
 
         // Rapportera in individuell poäng
-        const data = { "nollejump_score": score };
+        const data = { "score": score };
         fetch(
-            `${ENDPOINT_USER}${this.apiSettings.userId}`,
+            SCORE_ENDPOINT,
             {
-                method: "PATCH",
+                method: "POST",
                 body: JSON.stringify(data),
                 headers: new Headers({
                     "Authorization": `Token ${this.apiSettings.token}`,

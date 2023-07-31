@@ -367,7 +367,9 @@ class Level extends GameObject {
 		this.moveTimer -= delta;
 		if (this.moveTimer < 0) {
 			this.moveTimer += this.MOVE_TIME;
-			this.currentShape.fall(/*toBottom=*/false);
+			if (this.currentShape !== null) {
+				this.currentShape.fall(/*toBottom=*/false);
+			}
 		}
 		if (this.checkCompleteRowsTimer >= 0) {
 			this.checkCompleteRowsTimer -= delta;
@@ -628,7 +630,8 @@ class Level extends GameObject {
 			/*onCannotCreate=*/() => {
 				this.currentShape = null;
 				setCurrentShape = false;
-				alert('game over');
+				ScoreReporter.report(0, /*onSuccess=*/() => alert('Rapporterade in poäng!'));
+				console.log('Game over!');
 			},
 		);
 
