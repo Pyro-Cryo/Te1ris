@@ -47,7 +47,7 @@ class Gesture {
         if (significantVertical && deltaY > 2 * deltaX) {
             return GestureType.SWIPE_DOWN;
         }
-        if (significantHorizontal) {
+        if (significantHorizontal && deltaX > 2 * deltaY) {
             return GestureType.SWIPE_HORIZONTAL;
         }
         return GestureType.UNKNOWN;
