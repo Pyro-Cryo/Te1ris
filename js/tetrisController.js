@@ -20,6 +20,49 @@ class TetrisController extends Controller {
 
 		this.stateProperties = [];
 		this.level = null;
+		this.touchControls = new TouchControls(
+			/*element=*/this.gameArea.canvas,
+			/*onTap=*/(x, y) => {
+				if (!this.level || !this.level.currentShape) return;
+				// if (x > document.documentElement.clientHeight / 2) {
+				// 	this.level.currentShape.fall(/*toBottom=*/false);
+				// } else if (y > document.documentElement.clientWidth / 2) {
+				// 	this.level.currentShape.rotateRight();
+				// } else {
+				// 	this.level.currentShape.rotateLeft();
+				// }
+				const bandWidth = document.documentElement.clientWidth / 3;
+				if (x < bandWidth) {
+					this.level.currentShape.rotateLeft();
+				} else if (x < 2 * bandWidth) {
+					this.level.currentShape.fall(/*toBottom=*/false);
+				} else {
+					this.level.currentShape.rotateRight();
+				}
+			},
+			/*onSwipeDown=*/() => {
+				if (!this.level || !this.level.currentShape) return;
+				this.level.currentShape.fall(/*toBottom=*/true);
+			},
+			/*onSwipeHorizontal=*/xRelative => {
+				if (!this.level || !this.level.currentShape) return;
+				// Expand xRelative a bit so the edges are easier to reach.
+				xRelative = (xRelative - 0.5) * 1.4 + 0.5;
+				const targetColumn = Math.floor(this.level.numColumns * xRelative);
+				const right = targetColumn > this.level.currentShape.column;
+				let lastColumn = null;
+
+				// Send moves in the correct direction until we get stuck or reach the intended column.
+				while (this.level.currentShape.column !== targetColumn && lastColumn !== this.level.currentShape.column) {
+					lastColumn = this.level.currentShape.column;
+					if (right) {
+						this.level.currentShape.moveRight();
+					} else {
+						this.level.currentShape.moveLeft();
+					}
+				}
+			}
+		);
 
 		this.barHeight = 64;
 		this.marginHorizontal = 0;
@@ -73,6 +116,7 @@ class TetrisController extends Controller {
 
 	createLevel() {
 		this.level = new Level();
+
 	}
 
 	setupElements() {

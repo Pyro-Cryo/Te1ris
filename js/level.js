@@ -349,6 +349,7 @@ class Level extends GameObject {
 		this.distanceLastRow = lastRow[firstColumnInLastRow + 1][0] - lastRow[firstColumnInLastRow][0];
 
 		this.spawningPosition = [this.numRows - 1, firstColumnInLastRow + 1];
+		/** @type {?Shape} */
 		this.currentShape = null;
 		this.objective = new ClearNRowsObjective(this, 1);
 		this.spawnShape();

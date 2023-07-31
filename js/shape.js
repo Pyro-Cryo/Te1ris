@@ -1,9 +1,22 @@
 "use strict";
 
+/**
+ * @param {number[][]} arr 
+ * @param {number} rowDelta 
+ * @param {number} columnDelta 
+ * @returns {number[][]}
+ */
 function addToPositionArray(arr, rowDelta, columnDelta) {
     return arr.map(pos => [pos[0] + rowDelta, pos[1] + columnDelta]);
 }
 
+/**
+ * @param {number[][]} arr 
+ * @param {number} rowPivot 
+ * @param {number} columnPivot 
+ * @param {boolean} clockwise 
+ * @returns {number[][]}
+ */
 function rotateArrayAround(arr, rowPivot, columnPivot, clockwise) {
     if (clockwise) {
         return arr.map(pos => [
