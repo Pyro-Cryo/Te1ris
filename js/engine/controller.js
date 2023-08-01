@@ -414,6 +414,9 @@ class Controller {
      * Schedules a layer change before the next update call.
      */
     scheduleLayerChange(object, source, destination) {
+        if (this.currentlyChangingLayers.has(object)) {
+            source = this.currentlyChangingLayers.get(object).source;
+        }
         this.currentlyChangingLayers.set(object, {source: source, destination: destination});
     }
 

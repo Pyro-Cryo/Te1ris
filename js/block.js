@@ -80,6 +80,7 @@ class Block extends GameObject {
 
         this.level.occupied[this.row][this.column] = true;
         this.level.settledBlocks[this.row][this.column] = this;
+        // this.scale = this.baseScale * this.level.getScale(this.row, this.column);
     }
 
     update(delta) {
