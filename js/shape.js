@@ -54,7 +54,7 @@ class Shape extends GameObject {
      * @param {Level} level 
      * @param {function} onCannotCreate
      */
-    constructor(row, column, level, onCannotCreate) {
+    constructor(row, column, level, onCannotCreate, BlockType=Block) {
         super(0, 0);
         this.blockCoordsRelative = this.constructor.blockCoords;
         this.rotation = 0;
@@ -76,7 +76,7 @@ class Shape extends GameObject {
             pos => {
                 const imageIndex = imageIndices.length > 1 ? imageIndices.splice(Math.floor(Math.random() * imageIndices.length), 1)[0] : imageIndices[0];
 
-                return new Block(
+                return new BlockType(
                     pos[0],
                     pos[1],
                     this.level,
