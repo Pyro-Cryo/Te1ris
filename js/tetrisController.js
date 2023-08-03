@@ -350,4 +350,11 @@ class cheat {
 			}
 		}
 	}
+
+	/**
+	 * Går vidare till nästa objective.
+	 */
+	static get nextLevel() {
+		controller.level.onObjectiveCompleted()
+	}
 };

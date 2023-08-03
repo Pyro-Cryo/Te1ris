@@ -15,7 +15,7 @@ const FADDER_IMAGES = new Map(
     ])    
 );
 
-class Block extends GameObject {
+class Block extends EffectObject {
     static get scale() { return 0.10; }
 
     /**
@@ -80,6 +80,7 @@ class Block extends GameObject {
 
         this.level.occupied[this.row][this.column] = true;
         this.level.settledBlocks[this.row][this.column] = this;
+        this.scale = this.baseScale * this.level.getScale(this.row, this.column);
     }
 
     update(delta) {
@@ -116,6 +117,11 @@ class Block extends GameObject {
 
         [this.x, this.y] = this.level.positions[this.row][this.column];
         this.scale = this.baseScale * this.level.getScale(this.row, this.column);
+        for (const effect of this.effects) {
+            if (effect.baseScale !== undefined) {
+                effect.scale = effect.baseScale * this.level.getScale(this.row, this.column);
+            }
+        }
         return true;
     }
 
@@ -207,5 +213,40 @@ class FireParticle extends GameObject {
     draw(gameArea) {
         if (this.despawnTimer <= this.revealBelow)
             super.draw(gameArea);
+    }
+}
+
+
+// Dumy effect to display sunglasses on blocks.
+const sunglassesImage = Resource.addAsset('img/glasögon.png');
+class SunglasEffect extends BaseEffect {
+    static get image() { return Resource.getAsset(sunglassesImage); }
+    static get scale() { return 0.05; }
+    static get imgOffset() { return [null, null]; }
+
+    constructor() {
+        super();
+        this.baseScale = this.constructor.scale;
+    }
+
+    update(object, delta) {
+    }
+}
+
+class ShadedBlock extends Block {
+    constructor(row, column, level, image) {
+        super(row, column, level, image);
+        this.hp = 2;
+        this.shades = new SunglasEffect();
+        this.addEffect(this.shades);
+    }
+
+    onZapped() {
+        if (--this.hp <= 0) {
+            this.despawn();
+            return true;
+        }
+        this.removeEffect(this.shades);
+        return false;
     }
 }

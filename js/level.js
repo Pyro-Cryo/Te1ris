@@ -757,17 +757,21 @@ class Level extends GameObject {
 	}
 
 	onObjectiveCompleted() {
-		switch (Math.floor(Math.random() * 4)) {
+		// TODO: Välja level i nån kul ordning.
+		switch (Math.floor(Math.random() * 5)) {
 			case 0:
-				this.objective = new ClearNRowsObjective(this, Math.floor(Math.random() * 3) + 2);
+				this.objective = new ClearNRowsObjective(
+					this, Math.floor(Math.random() * 3) + 2);
 				break;
 
 			case 1:
-				this.objective = new ZapNBlocksObjective(this, Math.floor(Math.random() * 4 + 2) * 5);
+				this.objective = new ZapNBlocksObjective(
+					this, Math.floor(Math.random() * 4 + 2) * 5);
 				break;
 
 			case 2:
-				this.objective = new SettleNShapes(this, Math.floor(Math.random() * 4 + 2) * 5);
+				this.objective = new SettleNShapes(
+					this, Math.floor(Math.random() * 4 + 2) * 5);
 				break;
 
 			case 3:
@@ -776,6 +780,10 @@ class Level extends GameObject {
 					Math.floor(Math.random() * 4 + 2),
 				 	/*shapeTypeRestriction=*/SHAPES[Math.floor(Math.random() * SHAPES.length)]
 				);
+				break;
+			case 4:
+				this.objective = new ZapNShadedBlocksObjective(
+					this, Math.floor(Math.random() * 4 + 2));
 				break;
 		}
 	}

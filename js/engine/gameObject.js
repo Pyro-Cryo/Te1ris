@@ -30,16 +30,20 @@ class PrerenderedObject {
 	}
 
 	set image(value) {
-		this._image = value;
-		this._imageDirty = true;
+		if (value !== this._image) {
+			this._image = value;
+			this._imageDirty = true;
+		}
 	}
 	get image() {
 		return this._image;
 	}
 
 	set scale(value) {
-		this._scale = value;
-		this._imageDirty = true;
+		if (value !== this._scale) {
+			this._scale = value;
+			this._imageDirty = true;
+		}
 	}
 	get scale() {
 		return this._scale;
