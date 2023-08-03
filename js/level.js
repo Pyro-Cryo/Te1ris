@@ -806,7 +806,7 @@ class Level extends GameObject {
 
 	onObjectiveCompleted() {
 		// TODO: Välja level i nån kul ordning.
-		switch (Math.floor(Math.random() * 6)) {
+		switch (Math.floor(Math.random() * 7)) {
 			case 0:
 				this.objective = new ClearNRowsObjective(
 					this, Math.floor(Math.random() * 3) + 2);
@@ -837,6 +837,10 @@ class Level extends GameObject {
 
 			case 5:
 				this.objective = new SettleNShapesWithConfusedBlocks(
+					this, Math.floor(Math.random() * 4 + 2));
+				break;
+			case 6:
+				this.objective = new ZapNSleepingBlocksObjective(
 					this, Math.floor(Math.random() * 4 + 2));
 				break;
 		}

@@ -277,34 +277,27 @@ class ShadedBlock extends Block {
 
     onZapped() {
         if (--this.hp <= 0) {
-            this.despawn();
-            return true;
+            return super.onZapped();
         }
         this.removeEffect(this.shades);
         return false;
     }
 }
 
-const singleQuestionMarkImage = Resource.addAsset('img/questionmark.png');
-const questionMarksImage = Resource.addAsset('img/questionmarks.png');
-
-class ConfusedParticle extends GameObject {
-    static get image() { return Resource.getAsset(singleQuestionMarkImage); }
-    static get scale() { return 0.075; }
-
+class BaseParticle extends GameObject {
     /**
-     * @param {ConfusedBlock} block 
+     * @param {Block} block 
      */
-    constructor(block) {
+    constructor(block, image=null) {
         const [offsetX, offsetY] = [
             ...block.effects.values()
         ].find(
-            effect => effect instanceof ConfusedEffect
+            effect => effect instanceof ScalingEffect
         ).imgOffset;
         super(
             block.x + offsetX,
             block.y + offsetY,
-            /*image=*/null,
+            /*image=*/image,
             /*angle=*/(Math.random() - 0.5) * 20 * Math.PI / 180,
             /*scale=*/null,
             /*register=*/false,
@@ -321,6 +314,14 @@ class ConfusedParticle extends GameObject {
         this.x += this.speedX * delta;
         this.y += this.speedY * delta;
     }
+}
+
+const singleQuestionMarkImage = Resource.addAsset('img/questionmark.png');
+const questionMarksImage = Resource.addAsset('img/questionmarks.png');
+
+class ConfusedParticle extends BaseParticle {
+    static get image() { return Resource.getAsset(singleQuestionMarkImage); }
+    static get scale() { return 0.075; }
 }
 
 class ConfusedEffect extends ScalingEffect {
@@ -363,5 +364,98 @@ class ConfusedBlock extends Block {
                 }
             }
         }
+    }
+}
+
+const pillowImage = Resource.addAsset('img/pillow.png');
+const Z_IMAGES = [1,2,3,4,5].map(index => 
+    Resource.addAsset(`img/z/z${index}.png`)
+);
+class SleepyEffect extends ScalingEffect {
+    static get image() { return Resource.getAsset(pillowImage); }
+    static get scale() { return 0.125; }
+    static get angle() { return 20 * DEG_TO_RAD; }
+    static get imgOffset() { return [12, 5]; }
+    static get drawBefore() { return true; }
+}
+
+class SleepingParticle extends BaseParticle {
+    static get scale() { return 0.15; }
+
+    constructor(block) {
+        const image = Resource.getAsset(
+            Z_IMAGES[Math.floor(Math.random() * Z_IMAGES.length)]
+        );
+        super(block, image);
+    }
+}
+
+class SleepingEffect extends ScalingEffect {
+    static get image() {
+        return Resource.getAsset(
+            Z_IMAGES[Math.floor(Math.random() * Z_IMAGES.length)]
+        );
+    }
+    static get scale() { return 0.15; }
+    static get imgOffset() { return [12, -12]; }
+
+    constructor() {
+        super();
+        this.PARTICLE_TIME = 500;
+        this.particleTimer = this.PARTICLE_TIME;
+        this.block = null;
+    }
+
+    init(object) {
+        super.init(object);
+        this.block = object;
+    }
+
+    update(object, delta) {
+        super.update(object, delta);
+        this.particleTimer -= delta;
+        if (this.particleTimer <= 0) {
+            this.particleTimer += this.PARTICLE_TIME * (1 + Math.random());
+            new SleepingParticle(this.block);
+        }
+    }
+}
+
+class SleepyBlock extends Block {
+    constructor(row, column, level, image) {
+        super(row, column, level, image);
+        this.sleepeffect = new SleepyEffect();
+        this.sleepTimer = 250 + Math.random() * 5000;
+        this.isAsleep = false;
+        this.addEffect(this.sleepeffect);
+    }
+
+    fallAsleep() {
+        this.isAsleep = true;
+        if (this.sleepeffect !== null) {
+            this.removeEffect(this.sleepeffect);
+        }
+        this.sleepeffect = new SleepingEffect();
+        this.addEffect(this.sleepeffect);
+        this.angle = 20 * DEG_TO_RAD;
+    }
+
+    update(delta) {
+        super.update(delta);
+        if (this.isAsleep || !this.isSettled) {
+            return;
+        }
+        this.sleepTimer -= delta
+        if (this.sleepTimer <= 0) {
+            this.fallAsleep();
+        }
+    }
+
+    falldown() {
+        // Sovande faddrar hoppar inte ner.
+        if (this.isAsleep) {
+            return false;
+        }
+        return super.falldown();
     }
 }
