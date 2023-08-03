@@ -593,6 +593,51 @@ class Level extends GameObject {
 		});
 	}
 
+	simplePathBetween(startRow, startColumnOrAisle, destinationRow, destinationColumnOrAisle) {
+		const minColumnByRow = new Array(this.numRows).fill(0).map((_, r) => this._aisleToColumn(r, AISLE_LEFT));
+		const maxColumnByRow = new Array(this.numRows).fill(0).map((_, r) => this._aisleToColumn(r, AISLE_RIGHT));
+		// Make sure blocks can move between the outer (downwards) and inner (uppwards) aisle on the row with the door.
+		minColumnByRow[rowWithDoor] = minColumnByRow[rowWithDoor - 1];
+		maxColumnByRow[rowWithDoor] = maxColumnByRow[rowWithDoor - 1];
+		const startColumn = this._aisleToColumn(startRow, startColumnOrAisle);
+		const destinationColumn = this._aisleToColumn(destinationRow, destinationColumnOrAisle);
+
+
+		const path = [];
+		let currentRow = startRow;
+		let currentColumn = startColumn;
+		while (true) {
+			path.push([currentRow, currentColumn]);
+
+			if (currentRow === destinationRow) {
+				// In correct row, move towards target.
+				if (currentColumn === destinationColumn) break;
+				currentColumn += Math.sign(destinationColumn - currentColumn);
+			} else if (currentColumn === minColumnByRow[currentRow] || currentColumn === maxColumnByRow[currentRow]) {
+				// In an aisle column, move up/down.
+				const nextRow = currentRow + Math.sign(destinationRow - currentRow);
+				// If moving would put us outside the aisles, move back to them before changing row.
+				while (currentColumn < minColumnByRow[nextRow]) {
+					path.push([currentRow, currentColumn++]);
+				}
+				while (currentColumn > maxColumnByRow[nextRow]) {
+					path.push([currentRow, currentColumn--]);
+				}
+				currentRow = nextRow;
+			} else {
+				// Not on the correct row or in an aisle column. Move to the nearest aisle column.
+				if (currentColumn - minColumnByRow[currentRow] < maxColumnByRow[currentRow] - currentColumn) {
+					// Minimum column (left aisle) is nearer.
+					currentColumn--;
+				} else {
+					// Maximum column (right aisle) is nearer.
+					currentColumn++;
+				}
+			}
+		}
+		return path;
+	}
+
 	/**
 	 * Gets the scale multiplier for rendering an object at a certain position in
 	 * the lecture hall.
@@ -749,6 +794,7 @@ class Level extends GameObject {
 		for (const block of this.currentShape.blocks) {
 			this.occupied[block.row][block.column] = true;
 			this.settledBlocks[block.row][block.column] = block;
+			block.onSettle();
 			this.objective.onBlockSettled(block);
 		}
 		this.objective.onShapeSettled(this.currentShape);
@@ -760,7 +806,7 @@ class Level extends GameObject {
 
 	onObjectiveCompleted() {
 		// TODO: Välja level i nån kul ordning.
-		switch (Math.floor(Math.random() * 5)) {
+		switch (Math.floor(Math.random() * 6)) {
 			case 0:
 				this.objective = new ClearNRowsObjective(
 					this, Math.floor(Math.random() * 3) + 2);
@@ -783,8 +829,14 @@ class Level extends GameObject {
 				 	/*shapeTypeRestriction=*/SHAPES[Math.floor(Math.random() * SHAPES.length)]
 				);
 				break;
+
 			case 4:
 				this.objective = new ZapNShadedBlocksObjective(
+					this, Math.floor(Math.random() * 4 + 2));
+				break;
+
+			case 5:
+				this.objective = new SettleNShapesWithConfusedBlocks(
 					this, Math.floor(Math.random() * 4 + 2));
 				break;
 		}

@@ -162,4 +162,29 @@ class SettleNShapes extends Objective {
     }
 }
 
+class SettleNShapesWithConfusedBlocks extends Objective {
+    static get BlockTypes() {
+        return new Map([[Block, 6.0], [ConfusedBlock, 1.0]]);
+    }
+
+    constructor(level, numShapes) {
+        super(level, `Placera ${plural(numShapes, "grupp")} med vilsna faddrar`);
+        this.numShapes = numShapes;
+        this.remaining = numShapes;
+    }
+
+    /**
+     * @param {Shape} shape 
+     */
+    onShapeSettled(shape) {
+        if (shape.blocks.some(block => block instanceof ConfusedBlock)) {
+            this.remaining = Math.max(0, this.remaining - 1);
+            this.setProgress(1 - this.remaining / this.numShapes);
+            if (this.remaining === 0)
+                this.level.onObjectiveCompleted();
+        }
+    }
+
+}
+
 
