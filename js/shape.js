@@ -53,8 +53,9 @@ class Shape extends GameObject {
      * @param {Number} column
      * @param {Level} level 
      * @param {function} onCannotCreate
+     * @param {?(typeof Block)[]} BlockTypes
      */
-    constructor(row, column, level, onCannotCreate, BlockType=Block) {
+    constructor(row, column, level, onCannotCreate, BlockTypes = null) {
         super(0, 0);
         this.blockCoordsRelative = this.constructor.blockCoords;
         this.rotation = 0;
@@ -63,8 +64,14 @@ class Shape extends GameObject {
         this.level = level;
 
         const blockCoords = this.getBlockCoords();
-        console.log(`Spawning ${this.constructor.name} at ${this.row}-${this.column}`);
-        console.log('Block coordinates:', JSON.stringify(blockCoords));
+        // console.log(`Spawning ${this.constructor.name} at ${this.row}-${this.column}`);
+        // console.log('Block coordinates:', JSON.stringify(blockCoords));
+        if (BlockTypes === null) {
+            BlockTypes = blockCoords.map(_ => Block);
+        }
+        else {
+            BlockTypes = shuffle(BlockTypes);
+        }
 
         if (!this.allFree(blockCoords)) {
             onCannotCreate();
@@ -74,6 +81,7 @@ class Shape extends GameObject {
         const imageIndices = new Array(numImages).fill(0).map((_, i) => i);
         this.blocks = blockCoords.map(
             pos => {
+                const BlockType = BlockTypes.pop();
                 const imageIndex = imageIndices.length > 1 ? imageIndices.splice(Math.floor(Math.random() * imageIndices.length), 1)[0] : imageIndices[0];
 
                 return new BlockType(

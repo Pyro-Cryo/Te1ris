@@ -73,8 +73,7 @@ class Objective {
             /*column=*/column,
             /*level=*/this.level,
             /*onCannotCreate=*/onCannotCreate,
-            // TODO: Tillåta mixade blocktyper per shape?
-            /*BlockType=*/this.randomBlock()
+            /*BlockType=*/new Array(4).fill(null).map(_ => this.randomBlock()),
         );
 
         if (this.shapePool.length === 0) {

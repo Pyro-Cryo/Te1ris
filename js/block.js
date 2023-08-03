@@ -217,9 +217,9 @@ class FireParticle extends GameObject {
 }
 
 
-// Dumy effect to display sunglasses on blocks.
+// Dummy effect to display sunglasses on blocks.
 const sunglassesImage = Resource.addAsset('img/glasögon.png');
-class SunglasEffect extends BaseEffect {
+class SunglassEffect extends BaseEffect {
     static get image() { return Resource.getAsset(sunglassesImage); }
     static get scale() { return 0.05; }
     static get imgOffset() { return [null, null]; }
@@ -237,7 +237,7 @@ class ShadedBlock extends Block {
     constructor(row, column, level, image) {
         super(row, column, level, image);
         this.hp = 2;
-        this.shades = new SunglasEffect();
+        this.shades = new SunglassEffect();
         this.addEffect(this.shades);
     }
 
