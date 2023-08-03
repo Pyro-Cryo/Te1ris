@@ -10,9 +10,7 @@ body {
 	font-family: Nunito, sans-serif;
 	user-select: none;
 	overflow: hidden;
-}
-body.dark {
-	background-color: rgb(12, 3, 4);
+	background-color: #d1a8ce;
 }
 
 .hidden {
@@ -20,7 +18,7 @@ body.dark {
 }
 
 #gameboard {
-	border: 1px solid #aaaaaa;
+	/* border: 1px solid #aaaaaa; */
 	border-top: none;
 	transform-origin: center top;
 	transform: translateX(-50%);

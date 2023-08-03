@@ -400,12 +400,14 @@ class Level extends GameObject {
 			case 'Space':
 			case 'Numpad8':
 				this.currentShape.fall(/*toBottom=*/true);
+				this.moveTimer = Math.max(this.moveTimer, this.MOVE_TIME);
 				break;
 
 			case 'ArrowDown':
 			case 'KeyS':
 			case 'Numpad2':
 				this.currentShape.fall(/*toBottom=*/false);
+				this.moveTimer = Math.max(this.moveTimer, this.MOVE_TIME);
 				break;
 
 			case 'ArrowUp':

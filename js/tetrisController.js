@@ -22,27 +22,22 @@ class TetrisController extends Controller {
 		this.level = null;
 		this.touchControls = new TouchControls(
 			/*element=*/this.gameArea.canvas,
+			/*allowedElements=*/new Set([this.gameArea.canvas, document.documentElement]),
 			/*onTap=*/(x, y) => {
 				if (!this.level || !this.level.currentShape) return;
-				// if (x > document.documentElement.clientHeight / 2) {
-				// 	this.level.currentShape.fall(/*toBottom=*/false);
-				// } else if (y > document.documentElement.clientWidth / 2) {
-				// 	this.level.currentShape.rotateRight();
-				// } else {
-				// 	this.level.currentShape.rotateLeft();
-				// }
-				const bandWidth = document.documentElement.clientWidth / 3;
-				if (x < bandWidth) {
-					this.level.currentShape.rotateLeft();
-				} else if (x < 2 * bandWidth) {
+				if (y > document.documentElement.clientHeight / 2) {
 					this.level.currentShape.fall(/*toBottom=*/false);
-				} else {
+					this.level.moveTimer = Math.max(this.level.moveTimer, this.level.MOVE_TIME);
+				} else if (x > document.documentElement.clientWidth / 2) {
 					this.level.currentShape.rotateRight();
+				} else {
+					this.level.currentShape.rotateLeft();
 				}
 			},
 			/*onSwipeDown=*/() => {
 				if (!this.level || !this.level.currentShape) return;
 				this.level.currentShape.fall(/*toBottom=*/true);
+				this.level.moveTimer = Math.max(this.level.moveTimer, this.level.MOVE_TIME);
 			},
 			/*onSwipeHorizontal=*/xRelative => {
 				if (!this.level || !this.level.currentShape) return;
@@ -61,7 +56,7 @@ class TetrisController extends Controller {
 						this.level.currentShape.moveLeft();
 					}
 				}
-			}
+			},
 		);
 
 		this.barHeight = 64;
@@ -267,13 +262,6 @@ class cheat {
 	static get slowmo() {
 		controller.fastForwardFactor = 1 / controller.fastForwardFactor;
 		controller.toggleFastForward();
-	}
-
-
-	static get darkmode() {
-		document.body.classList.add("dark");
-		controller.background.dark = true;
-		Background.dark = true;
 	}
 
 	static get break() {
