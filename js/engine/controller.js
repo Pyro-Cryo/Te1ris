@@ -86,8 +86,10 @@ class Controller {
         this.volume = 0.2;
         this.musicSpeedupOnFF = musicFF;
         this.muted = !!window.localStorage.getItem(this.constructor.STORAGE_PREFIX + "mute");
-        this.muteButton.addEventListener("click", e => {this.onMute(); e.preventDefault();});
-        this.unmuteButton.addEventListener("click", e => {this.onUnMute(); e.preventDefault();});
+        if (this.muteButton)
+            this.muteButton.addEventListener("click", e => {this.onMute(); e.preventDefault();});
+        if (this.unmuteButton)
+            this.unmuteButton.addEventListener("click", e => {this.onUnMute(); e.preventDefault();});
 
         // Info field
         this.messageBox = document.getElementById("messageBox");
@@ -206,7 +208,7 @@ class Controller {
             this.muteButton.classList.remove("hidden");
         if (this.unmuteButton)
             this.unmuteButton.classList.add("hidden");
-        this.muted = true;
+        this.muted = false;
         window.localStorage.setItem(this.constructor.STORAGE_PREFIX + "mute", this.muted);
     }
 

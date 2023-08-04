@@ -132,46 +132,6 @@ body {
 		padding-right: 0.4ex;
 	}
 
-
-#levelTracker {
-	width: 125px;
-	border-radius: 14px;
-	background-color: black;
-	padding: 4px 0px;
-	overflow: hidden;
-}
-
-#levelTracker > div {
-	display: flex;
-	justify-content: space-evenly;
-	align-items: center;
-}
-
-#levelTracker div {
-	font-size: 4px;
-	color: white;
-}
-
-#levelTracker .cleared {
-	color: rgb(60, 132, 60);
-}
-
-#levelTracker .current {
-	color: rgb(225, 210, 0);
-}
-
-#levelTracker .special {
-	color: rgb(70, 215, 215);
-}
-
-#levelTracker .danger {
-	color: rgb(255, 72, 72);
-}
-
-#levelTracker .big {
-	font-size: 16px;
-}
-
 #objective {
 	text-align: center;
 }
@@ -188,17 +148,17 @@ body {
 	width: 100px;
 }
 
-#objectiveTracker .progressBar {
-	width: 0%;
-	transition: width 0.5s ease-in-out;
-	background-color: #9768ac;
-	height: 100%;
-}
+	#objectiveTracker .progressBar {
+		width: 0%;
+		transition: width 0.5s ease-in-out;
+		background-color: #9768ac;
+		height: 100%;
+	}
 
-#objectiveTracker .progressBarLabel {
-	text-align: center;
-	color: white;
-	width: 100%;
-	position: absolute;
-	top: 0;
-}
+	#objectiveTracker .progressBarLabel {
+		text-align: center;
+		color: white;
+		width: 100%;
+		position: absolute;
+		top: 0;
+	}

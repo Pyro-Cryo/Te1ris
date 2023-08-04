@@ -2,6 +2,29 @@
 
 const music = Resource.addAsset("audio/myrstacken.mp3", LoopableAudioWithTail);
 
+class ModalButton {
+	/**
+	 * @param {string} label 
+	 * @param {string} icon 
+	 * @param {(e: Event) => void} onClick 
+	 */
+	constructor(label, icon, onClick) {
+		this.label = label;
+		this.icon = icon;
+		this.onClick = onClick;
+	}
+}
+
+class TogglableModalButton extends ModalButton {
+	constructor(label, icon, onClick, clickedLabel, clickedIcon, onUnclick, startClicked = false) {
+		super(label, icon, onClick);
+		this.clickedLabel = clickedLabel;
+		this.clickedIcon = clickedIcon;
+		this.onUnclick = onUnclick;
+		this.startClicked = startClicked;
+	}
+}
+
 class TetrisController extends Controller {
 
 	static get WIDTH_PX() { return 1440;}
@@ -17,6 +40,7 @@ class TetrisController extends Controller {
 			progressBar: document.querySelector("#objectiveTracker > .progressBar"),
 			progressBarLabel: document.getElementById("progress")
 		};
+		this.modalElement = document.getElementById("modal");
 
 		this.stateProperties = [];
 		this.level = null;
@@ -86,8 +110,10 @@ class TetrisController extends Controller {
 		this.setMusic(Resource.getAsset(music));
 		if (this.muted) {
 			this.currentMusic.volume = 0;
-			this.muteButton.classList.add("hidden");
-			this.unmuteButton.classList.remove("hidden");
+			if (this.muteButton)
+				this.muteButton.classList.add("hidden");
+			if (this.unmuteButton)
+				this.unmuteButton.classList.remove("hidden");
 		}
 		this.startDrawLoop();
 		this.loadState();
@@ -109,65 +135,130 @@ class TetrisController extends Controller {
 		setTimeout(() => this.setMessage("Spelet är trasigt :("), 1000);
 	}
 
+
+	/**
+	 * @param {ModalButton[]} buttons 
+	 * @param {?string} message 
+	 * @param {string} title 
+	 */
+	displayModal(buttons, message = null, title = "Pausat") {
+		const titleElement = document.getElementById("modalTitle");
+		const messageElement = document.getElementById("modalMessage");
+		const buttonTemplate = document.getElementById("buttonTemplate");
+
+		titleElement.innerText = title;
+		if (message === null) {
+			messageElement.classList.add('hidden');
+		} else {
+			messageElement.innerText = message;
+			messageElement.classList.remove('hidden');
+		}
+
+		// Delete from the end, keep the template element.
+		while (this.modalElement.lastElementChild !== buttonTemplate) {
+			this.modalElement.lastElementChild.remove();
+		}
+		for (const button of buttons) {
+			/** @type {HTMLButtonElement} */
+			const buttonElement = buttonTemplate.cloneNode(/*deep=*/true);
+			const [buttonLabel] = buttonElement.getElementsByClassName("buttonLabel");
+			const [buttonIcon] = buttonElement.getElementsByClassName("buttonIcon");
+			buttonLabel.innerText = button.label;
+			buttonIcon.innerText = button.icon;
+			
+			if (button instanceof TogglableModalButton) {
+				const clickedButtonElement = buttonTemplate.cloneNode(true);
+				const [clickedButtonLabel] = clickedButtonElement.getElementsByClassName("buttonLabel");
+				const [clickedButtonIcon] = clickedButtonElement.getElementsByClassName("buttonIcon");
+				clickedButtonLabel.innerText = button.clickedLabel;
+				clickedButtonIcon.innerText = button.clickedIcon;
+
+				buttonElement.addEventListener("click", e => {
+					buttonElement.classList.add("hidden");
+					clickedButtonElement.classList.remove("hidden");
+					button.onClick(e);
+				});
+				clickedButtonElement.addEventListener("click", e => {
+					clickedButtonElement.classList.add("hidden");
+					buttonElement.classList.remove("hidden");
+					button.onUnclick(e);
+				});
+
+				if (button.startClicked) {
+					clickedButtonElement.classList.remove("hidden");
+				} else {
+					buttonElement.classList.remove("hidden");
+				}
+				this.modalElement.appendChild(clickedButtonElement);
+			} else {
+				buttonElement.addEventListener("click", button.onClick);
+				buttonElement.classList.remove("hidden");
+			}
+			this.modalElement.appendChild(buttonElement);
+		}
+		this.modalElement.classList.remove("hidden");
+	}
+
+	closeModal() {
+		this.modalElement.classList.add("hidden");
+	}
+
+	get isModalOpen() {
+		return !this.modalElement.classList.contains("hidden");
+	}
+
 	createLevel() {
 		this.level = new Level();
-
 	}
 
 	setupElements() {
-		// Resumeknappen på paussidan
-		document.getElementById("resumeButton").addEventListener("click", e => {
-			this.togglePause();
-			e.preventDefault();
-		}, true);
-		// Respawnknappen ("försök igen") på du dog-sidan
-		document.getElementById("respawnButton").addEventListener("click", e => {
-			this.unregisterAllObjects();
-			this.gameArea.resetDrawOffset();
-			this.spawnPlayer();
-			this.startLevel();
-			document.getElementById("deathmenu").classList.add("hidden");
-			this.currentMusic.currentTime = 0;
-			this.currentMusic.play();
-			e.preventDefault();
-		}, true);
-		// Restartknappar finns på både paus- och dogsidan
-		const restartButtons = document.getElementsByClassName("restartButton");
-		for (let i = 0; i < restartButtons.length; i++)
-			restartButtons.item(i).addEventListener("click", e => {
-				if (window.confirm("Är du säker på att du vill börja om från alla första början?")) {
-					if (this.isFF)
-						this.toggleFastForward();
-					this.clearState();
-					this.loadState(); // Laddar defaultstate
-					this.unregisterAllObjects();
-					this.gameArea.resetDrawOffset();
-					this.spawnPlayer();
-					this.startLevel();
-					this.currentMusic.currentTime = 0;
-					if (!this.isPaused) { // Dödsmenyn är uppe
-						document.getElementById("deathmenu").classList.add("hidden");
-						super.onPause(); // Pausa utan att öppna pausmenyn, eftersom vi vill visa choicemenu istället
-					} else // Pausmenyn är uppe
-						document.getElementById("pausemenu").classList.add("hidden");
-					document.getElementById("choicemenu").classList.remove("hidden");
-				}
-				e.preventDefault();
-			}, true);
+		// // Resumeknappen på paussidan
+		// document.getElementById("resumeButton").addEventListener("click", e => {
+		// 	this.togglePause();
+		// 	e.preventDefault();
+		// }, true);
+		// // Respawnknappen ("försök igen") på du dog-sidan
+		// document.getElementById("respawnButton").addEventListener("click", e => {
+		// 	this.unregisterAllObjects();
+		// 	this.gameArea.resetDrawOffset();
+		// 	this.spawnPlayer();
+		// 	this.startLevel();
+		// 	document.getElementById("deathmenu").classList.add("hidden");
+		// 	this.currentMusic.currentTime = 0;
+		// 	this.currentMusic.play();
+		// 	e.preventDefault();
+		// }, true);
+		// // Restartknappar finns på både paus- och dogsidan
+		// const restartButtons = document.getElementsByClassName("restartButton");
+		// for (let i = 0; i < restartButtons.length; i++)
+		// 	restartButtons.item(i).addEventListener("click", e => {
+		// 		if (window.confirm("Är du säker på att du vill börja om från alla första början?")) {
+		// 			if (this.isFF)
+		// 				this.toggleFastForward();
+		// 			this.clearState();
+		// 			this.loadState(); // Laddar defaultstate
+		// 			this.unregisterAllObjects();
+		// 			this.gameArea.resetDrawOffset();
+		// 			this.spawnPlayer();
+		// 			this.startLevel();
+		// 			this.currentMusic.currentTime = 0;
+		// 			if (!this.isPaused) { // Dödsmenyn är uppe
+		// 				document.getElementById("deathmenu").classList.add("hidden");
+		// 				super.onPause(); // Pausa utan att öppna pausmenyn, eftersom vi vill visa choicemenu istället
+		// 			} else // Pausmenyn är uppe
+		// 				document.getElementById("pausemenu").classList.add("hidden");
+		// 			document.getElementById("choicemenu").classList.remove("hidden");
+		// 		}
+		// 		e.preventDefault();
+		// 	}, true);
 
 		document.body.addEventListener("keydown", e => {
 			if (e.code === "Escape") {
-				if (!this.isPaused) {
-					let noneOpen = true;
-					const menus = document.getElementsByClassName("menu");
-					for (let i = 0; i < menus.length; i++)
-						noneOpen &= menus.item(i).classList.contains("hidden");
-					if (noneOpen) {
-						document.getElementById("playButton").click();
-						e.preventDefault();
-					}
-				} else if (!document.getElementById("pausemenu").classList.contains("hidden")) {
-					document.getElementById("resumeButton").click();
+				if (!this.isPaused && !this.isModalOpen) {
+					this.onPlay();
+					e.preventDefault();
+				} else if (this.isModalOpen) {
+					this.onPlay();
 					e.preventDefault();
 				}
 			}
@@ -238,7 +329,7 @@ class TetrisController extends Controller {
 			this.hideMessage();
 			this.objective.root.classList.remove("hidden");
 		}
-		document.getElementById("pausemenu").classList.add("hidden");
+		this.closeModal();
 		if (!this.currentMusic) {
 			this.currentMusic = Resource.getAsset(music);
 			this.currentMusic.currentTime = 0;
@@ -248,8 +339,20 @@ class TetrisController extends Controller {
 
 	onPause() {
 		super.onPause();
-		document.getElementById("pausemenu").classList.remove("hidden");
-		// this.funFacts();
+		this.displayModal(
+			/*buttons=*/[
+				new ModalButton("Fortsätt", "\ue037", () => this.onPlay()),
+				new TogglableModalButton(
+					"Tysta musik",
+					"\ue04f",
+					() => this.onMute(),
+					"Sätt på musik",
+					"\ue050",
+					() => this.onUnMute(),
+					this.muted,
+				)
+			]
+		);
 		if (this.currentMusic)
 			this.currentMusic.pause();
 	}
