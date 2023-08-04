@@ -679,7 +679,7 @@ class Level extends GameObject {
 				this.currentShape = null;
 				setCurrentShape = false;
 				ScoreReporter.report(0, /*onSuccess=*/() => alert('Rapporterade in poäng!'));
-				console.log('Game over!');
+				Controller.instance.showGameOver();
 			},
 		);
 

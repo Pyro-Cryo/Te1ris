@@ -435,6 +435,7 @@ class Controller {
             layer.clear();
         }
         this.layers = [];
+        this.currentlyChangingLayers.clear();
     }
 
     /**

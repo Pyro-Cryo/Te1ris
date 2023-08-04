@@ -42,7 +42,8 @@ class TetrisController extends Controller {
 		};
 		this.modalElement = document.getElementById("modal");
 
-		this.stateProperties = [];
+		this.hasSeenIntroduction = false;
+		this.stateProperties = ["hasSeenIntroduction"];
 		this.level = null;
 		this.touchControls = new TouchControls(
 			/*element=*/this.gameArea.canvas,
@@ -119,7 +120,10 @@ class TetrisController extends Controller {
 		this.loadState();
 		this.createLevel();
 		this.setupElements();
-		this.onPause();
+		if (!this.hasSeenIntroduction)
+			this.showIntroduction();
+		else
+			this.onPause();
 	}
 
 	onAssetsLoadFailure(reason) {
@@ -212,50 +216,10 @@ class TetrisController extends Controller {
 	}
 
 	setupElements() {
-		// // Resumeknappen på paussidan
-		// document.getElementById("resumeButton").addEventListener("click", e => {
-		// 	this.togglePause();
-		// 	e.preventDefault();
-		// }, true);
-		// // Respawnknappen ("försök igen") på du dog-sidan
-		// document.getElementById("respawnButton").addEventListener("click", e => {
-		// 	this.unregisterAllObjects();
-		// 	this.gameArea.resetDrawOffset();
-		// 	this.spawnPlayer();
-		// 	this.startLevel();
-		// 	document.getElementById("deathmenu").classList.add("hidden");
-		// 	this.currentMusic.currentTime = 0;
-		// 	this.currentMusic.play();
-		// 	e.preventDefault();
-		// }, true);
-		// // Restartknappar finns på både paus- och dogsidan
-		// const restartButtons = document.getElementsByClassName("restartButton");
-		// for (let i = 0; i < restartButtons.length; i++)
-		// 	restartButtons.item(i).addEventListener("click", e => {
-		// 		if (window.confirm("Är du säker på att du vill börja om från alla första början?")) {
-		// 			if (this.isFF)
-		// 				this.toggleFastForward();
-		// 			this.clearState();
-		// 			this.loadState(); // Laddar defaultstate
-		// 			this.unregisterAllObjects();
-		// 			this.gameArea.resetDrawOffset();
-		// 			this.spawnPlayer();
-		// 			this.startLevel();
-		// 			this.currentMusic.currentTime = 0;
-		// 			if (!this.isPaused) { // Dödsmenyn är uppe
-		// 				document.getElementById("deathmenu").classList.add("hidden");
-		// 				super.onPause(); // Pausa utan att öppna pausmenyn, eftersom vi vill visa choicemenu istället
-		// 			} else // Pausmenyn är uppe
-		// 				document.getElementById("pausemenu").classList.add("hidden");
-		// 			document.getElementById("choicemenu").classList.remove("hidden");
-		// 		}
-		// 		e.preventDefault();
-		// 	}, true);
-
 		document.body.addEventListener("keydown", e => {
 			if (e.code === "Escape") {
 				if (!this.isPaused && !this.isModalOpen) {
-					this.onPlay();
+					this.onPause();
 					e.preventDefault();
 				} else if (this.isModalOpen) {
 					this.onPlay();
@@ -263,7 +227,6 @@ class TetrisController extends Controller {
 				}
 			}
 		}, true);
-		
 	}
 
 	setCanvasDimensions(barHeight, marginHorizontal, marginVertical = null) {
@@ -281,6 +244,7 @@ class TetrisController extends Controller {
 
 	loadState() {
 		const defaultState = {
+			hasSeenIntroduction: false,
 		};
 		let data = window.localStorage.getItem(this.STORAGE_PREFIX + "state");
 		if (data)
@@ -342,6 +306,7 @@ class TetrisController extends Controller {
 		this.displayModal(
 			/*buttons=*/[
 				new ModalButton("Fortsätt", "\ue037", () => this.onPlay()),
+				new ModalButton("Visa kontroller", "\uea28", () => this.showControls()),
 				new TogglableModalButton(
 					"Tysta musik",
 					"\ue04f",
@@ -355,6 +320,104 @@ class TetrisController extends Controller {
 		);
 		if (this.currentMusic)
 			this.currentMusic.pause();
+	}
+
+	showControls(label = null, icon = null, onClick = null) {
+		if (!this.isPaused) {
+			super.onPause();
+			if (this.currentMusic)
+				this.currentMusic.pause();
+		}
+		label ??= "Fortsätt";
+		icon ??= "\ue037";
+		onClick ??= () => this.onPlay();
+		let message;
+		if ("ontouchstart" in document.documentElement) {
+			// Förmodligen mobil - iallafall finns touchevent, och det gör de sällan på desktop.
+			message = "Tryck eller dra på skärmen för att guida faddrarna rätt.\n- Tycker du snabbt längst ner på skärmen hoppar faddrarna direkt ner en rad.\n- Trycker du uppe till höger eller till vänster så roterar faddrarna.\n- Drar du i horisontell led så förflyttar de sig efter ditt finger.\n- Drar du nedåt så hoppar de direkt så långt ner i salen de kan.\n- Pausa genom att trycka på ikonen uppe till vänster.";
+		} else {
+			// Förmodligen desktop - vi vet visserligen inte att tangentbord finns, men det är inte vårt problem för touchkontroller fanns uppenbarligen ändå inte.
+			message = "Använd tangentbordet för att guida faddrarna rätt.\n- Trycker du på nedåtpil eller S hoppar faddrarna direkt ner en rad.\n- Trycker du på uppåtpil eller E/Q så roterar faddrarna.\n- Trycker du på höger-/vänsterpil eller D/A förflyttar de sig i horisontell led.\n- Trycker du på mellanslag så hoppar de direkt så långt ner i salen de kan.\n- Pausa genom att trycka på ikonen uppe till vänster, eller Escape.";
+		}
+		this.displayModal(
+			[new ModalButton(label, icon, onClick)],
+			message,
+			"Kontroller",
+		);
+	}
+
+	showIntroduction() {
+		super.onPause();
+		const messages = [
+			"Välkommen till TE1ris!\n\nDet är föreläsning i E1 och Fysikerna och Matematikerna börjar strömma in. Föreläsaren har lovat att ranka alla saker uppkallade efter Gauss i coolhetsordning och intresset är självklart rekordstort. Men kommer platserna räcka åt alla, eller blir det ståplats åt eftersläntrarna? Bara DU kan lösa detta packningsproblem (och du behöver inte ens ha läst Fastan)!",
+			"Grupper med fyra faddrar åt gången kommer att gå in genom dörren och sätta sig längst bak. Finns det plats framför dem så flyttar de ner en rad, tillsammans. Gör det inte det så sätter de sig permanent, och sen kommer nästa grupp in.\n\nNär en rad blir full får salen ett kort besök av Föhseriet, som medelst sin ljungeldsblick vänligt (men bestämt) uppmanar faddrarna att byta aggregationstillstånd, så att fler ska få plats.",
+			"Överst på skärmen finns det ett mål som du ska försöka uppfylla, t.ex. att hjälpa N grupper hitta en plats för något positivt heltal N. Lyckas du uppfylla dessa får du poäng!\n\nOm salen blir så full att nästa grupp faddrar inte får plats så är spelet över.",
+		];
+
+		const displayNext = () => {
+			const [message] = messages.splice(0, 1);
+			this.displayModal(
+				[
+					new ModalButton(
+						"Nästa",
+						"\ue5c8",
+						() => {
+							if (messages.length === 0) {
+								this.hasSeenIntroduction = true;
+								this.saveState();
+								this.showControls("Börja", "\ue037");
+							} else {
+								displayNext();
+							}
+						},
+					)
+				],
+				message,
+				"TE1ris"
+			);
+		};
+		displayNext();
+		if (this.currentMusic)
+			this.currentMusic.pause();
+	}
+
+	restart() {
+		this.unregisterAllObjects();
+		this.createLevel();
+		this.currentMusic.currentTime = 0;
+		this.onPlay();
+	}
+
+	showGameOver() {
+		if (!this.isPaused) {
+			super.onPause();
+			if (this.currentMusic)
+				this.currentMusic.pause();
+		}
+		const buttons = [
+			new ModalButton("Spela igen", "\ue042", () => this.restart()),
+		];
+		const score = 0;  // TODO: Poängsystem, och hämta poängen hit.
+		// Detta kanske kan klassas som BM, men det hjälper säkert någon.
+		if (score < 100) {
+			buttons.push(
+				new ModalButton(
+					"Visa kontroller",
+					"\uea28",
+					() => this.showControls(
+						"Spela igen",
+						"\ue042",
+						() => this.restart(),
+					),
+				)
+			);
+		}
+		this.displayModal(
+			buttons,
+			"Trots dina tappra försök att dirigera alla nyfikna faddrar får nästa grupp helt enkelt inte plats!\n\n"
+			+ (score > 0 ? `Du lyckades samla ihop ${score} poäng!` : `Det blev tyvärr inga poäng den här gången :(`),
+			"Åh nej!",
+		);
 	}
 }
 
