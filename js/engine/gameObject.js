@@ -1,6 +1,6 @@
 "use strict";
 
-const DEG_TO_RAD = 3.141592 / 180;
+const DEG_TO_RAD = Math.PI / 180;
 /**
  * Represents an object with a sprite that can be rotated, scaled or otherwise updated.
  */

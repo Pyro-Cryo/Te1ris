@@ -35,6 +35,7 @@ class Block extends EffectObject {
         this.walkingProgress = 0;
         // Minimum difference in scale that should cause an update of the block's drawn size.
         this.walkingScaleMinDelta = 0.005;
+        this.walkingOriginalAngle = this.angle;
         Controller.instance.registerObject(this, this.layer);
         this.updatePositionAndRescale();
         this.isSettled = false;
@@ -100,6 +101,7 @@ class Block extends EffectObject {
                 this.walkingPathRowColumn = null;
                 this.walkingPathXYScale = null;
                 this.layer = this.rowToLayer(this.row);
+                this.angle = this.walkingOriginalAngle;
                 this.onPathCompleted();
                 return;
             }
@@ -117,6 +119,9 @@ class Block extends EffectObject {
             const walkingProgressAsIndex = Math.floor(this.walkingProgress * this.walkingPathRowColumn.length)
             const pseudoRow = this.walkingPathRowColumn[walkingProgressAsIndex][0];
             this.layer = this.rowToLayer(pseudoRow);
+
+            // Update the angle so the block waddles a bit.
+            this.angle = this.walkingOriginalAngle + 35 * (walkingProgressAsIndex % 2 - 0.5) * DEG_TO_RAD;
         }
     }
 
@@ -202,6 +207,7 @@ class Block extends EffectObject {
         this.walkingPathRowColumn = rowColumnPath;
         this.walkingPathXYScale = this.level.rowColumnPathToPositionScaleCoordinates(rowColumnPath);
         this.walkingProgress = 0;
+        this.walkingOriginalAngle = this.angle;
         const [newRow, newColumn] = rowColumnPath[rowColumnPath.length - 1];
         if (this.level.isInMap(newRow, newColumn)) {
             this.move(newRow, newColumn);
