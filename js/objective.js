@@ -160,6 +160,27 @@ class ZapNSleepingBlocksObjective extends Objective {
     }
 }
 
+class ZapNRudeBlocksObjective extends Objective {
+    static get BlockTypes() {
+        return new Map([[Block, 6.0], [RudeBlock, 1.0]]);
+    }
+
+    constructor(level, numBlocks) {
+        super(level, `Zappa ${plural(numBlocks, "dryg fadder", "dryga faddrar")}`);
+        this.numBlocks = numBlocks;
+        this.remaining = numBlocks;
+    }
+
+    onBlockZapped(block) {
+        if (block instanceof RudeBlock) {
+            this.remaining = Math.max(0, this.remaining - 1);
+            this.setProgress(1 - this.remaining / this.numBlocks);
+            if (this.remaining === 0)
+                this.level.onObjectiveCompleted();
+        }
+    }
+}
+
 class SettleNShapes extends Objective {
     constructor(level, numShapes, shapeTypeRestriction = null) {
         let groupPrefix;

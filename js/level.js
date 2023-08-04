@@ -794,6 +794,8 @@ class Level extends GameObject {
 		for (const block of this.currentShape.blocks) {
 			this.occupied[block.row][block.column] = true;
 			this.settledBlocks[block.row][block.column] = block;
+		}
+		for (const block of this.currentShape.blocks) {
 			block.onSettle();
 			this.objective.onBlockSettled(block);
 		}
@@ -806,7 +808,7 @@ class Level extends GameObject {
 
 	onObjectiveCompleted() {
 		// TODO: Välja level i nån kul ordning.
-		switch (Math.floor(Math.random() * 7)) {
+		switch (Math.floor(Math.random() * 8)) {
 			case 0:
 				this.objective = new ClearNRowsObjective(
 					this, Math.floor(Math.random() * 3) + 2);
@@ -839,8 +841,14 @@ class Level extends GameObject {
 				this.objective = new SettleNShapesWithConfusedBlocks(
 					this, Math.floor(Math.random() * 4 + 2));
 				break;
+
 			case 6:
 				this.objective = new ZapNSleepingBlocksObjective(
+					this, Math.floor(Math.random() * 4 + 2));
+				break;
+
+			case 7:
+				this.objective = new ZapNRudeBlocksObjective(
 					this, Math.floor(Math.random() * 4 + 2));
 				break;
 		}

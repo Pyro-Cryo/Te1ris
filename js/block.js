@@ -288,11 +288,11 @@ class BaseParticle extends GameObject {
     /**
      * @param {Block} block 
      */
-    constructor(block, image=null) {
+    constructor(block, image = null, SpawningEffect = ScalingEffect) {
         const [offsetX, offsetY] = [
             ...block.effects.values()
         ].find(
-            effect => effect instanceof ScalingEffect
+            effect => effect instanceof SpawningEffect
         ).imgOffset;
         super(
             block.x + offsetX,
@@ -360,7 +360,7 @@ class ConfusedBlock extends Block {
                 if (--this.numParticles <= 0) {
                     this.leave();
                 } else {
-                    new ConfusedParticle(this);
+                    new ConfusedParticle(this, /*image=*/null, ConfusedEffect);
                 }
             }
         }
@@ -416,7 +416,7 @@ class SleepingEffect extends ScalingEffect {
         this.particleTimer -= delta;
         if (this.particleTimer <= 0) {
             this.particleTimer += this.PARTICLE_TIME * (1 + Math.random());
-            new SleepingParticle(this.block);
+            new SleepingParticle(this.block, /*image=*/null, SleepingEffect);
         }
     }
 }
@@ -457,5 +457,65 @@ class SleepyBlock extends Block {
             return false;
         }
         return super.falldown();
+    }
+}
+
+const jacketImage = Resource.addAsset('img/jacka.png');
+const backpackImage = Resource.addAsset('img/backpack.png');
+
+class RudeEffect extends ScalingEffect {
+    constructor(left) {
+        super();
+        this.left = left;
+        this.scaleMultiplierWhenSettled = 1.25;
+    }
+
+    /**
+     * @param {Block} block 
+     */
+    onSettle(block) {
+        const obstacleColumn = block.column + (this.left ? -1 : 1);
+        if (block.level.isFree(block.row, obstacleColumn)) {
+            const obstacle = new Block(block.row, obstacleColumn, block.level, this.constructor.image);
+            block.level.occupied[block.row][obstacleColumn] = true;
+            block.level.settledBlocks[block.row][obstacleColumn] = obstacle;
+            obstacle.baseScale = this.baseScale * this.scaleMultiplierWhenSettled;
+            obstacle.scale = this.scale * this.scaleMultiplierWhenSettled;
+            obstacle.angle = this.angle * 3;
+            obstacle.onSettle();
+        }
+        block.removeEffect(this);
+    }
+}
+
+class JacketEffect extends RudeEffect {
+    static get image() { return Resource.getAsset(jacketImage); }
+    static get angle() { return -5 * DEG_TO_RAD; }
+    static get scale() { return 0.12; }
+    static get imgOffset() { return [-12, 5]; }
+    constructor() { super(true); }
+}
+
+class BackpackEffect extends RudeEffect {
+    static get image() { return Resource.getAsset(backpackImage); }
+    static get angle() { return 5 * DEG_TO_RAD; }
+    static get scale() { return 0.12; }
+    static get imgOffset() { return [12, 5]; }
+    constructor() { super(false); }
+}
+
+class RudeBlock extends Block {
+    constructor(row, column, level, image) {
+        super(row, column, level, image);
+        this.jacketEffect = new JacketEffect();
+        this.backpackEffect = new BackpackEffect();
+        this.addEffect(this.jacketEffect);
+        this.addEffect(this.backpackEffect);
+    }
+
+    onSettle() {
+        super.onSettle();
+        this.jacketEffect.onSettle(this);
+        this.backpackEffect.onSettle(this);
     }
 }

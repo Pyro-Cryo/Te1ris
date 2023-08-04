@@ -254,18 +254,13 @@ class EffectObject extends GameObject {
 class BaseEffect extends PrerenderedObject {
 	static get stackable() { return false; }
 	static get maxInvocations() { return 10; }
-	static get image() { return null; }
-	static get scale() { return 1; }
 	// px offset från parent object för att rita img. null för default värde.
 	static get imgOffset() { return [null, null]; }
 	static get cooldown() { return 1000; }
 	static get drawBefore() { return false; }
 
 	constructor() {
-		super(null, 0, 1);
-
-		this.image = this.constructor.image;
-		this.scale = this.constructor.scale;
+		super();
 
 		this.cooldown = this.constructor.cooldown;
 		this.cdtime = this.cooldown;
