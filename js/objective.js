@@ -9,7 +9,7 @@ function plural(num, singular, plural = null) {
 }
 
 class Objective {
-    static get BlockTypes() { return new Map([[Block, 1.0]]); }
+    static get BlockTypes() { return new Map([[Block, 1]]); }
     /**
      * @param {Level} level 
      */
@@ -17,6 +17,13 @@ class Objective {
         this.level = level;
         this.descriptionShort = descriptionShort;
         this.descriptionLong = descriptionLong || descriptionShort;
+        const blockPool = [];
+        for (const [BlockType, weight] of this.constructor.BlockTypes.entries()) {
+            for (let i = 0; i < weight; i++) {
+                blockPool.push(BlockType);
+            }
+        }
+        this.blockPool = new InfiniteBag(blockPool, /*copies=*/2);
 
         if (progressResetTime > 0) {
             // Det är trevligt att få se att man kom upp i 100%,
@@ -25,6 +32,14 @@ class Objective {
         } else {
             this.initializeUIElements();
         }
+    }
+
+    /**
+     * @param {number} num 
+     * @returns {(typeof Block)[]}
+     */
+    getNextBlocks(num = 4) {
+        return new Array(num).fill(null).map(_ => this.blockPool.pop());
     }
 
     initializeUIElements() {
@@ -93,7 +108,7 @@ class ZapNBlocksObjective extends Objective {
 
 class ZapNShadedBlocksObjective extends Objective {
     static get BlockTypes() {
-        return new Map([[Block, 4.0], [ShadedBlock, 1.0]]);
+        return new Map([[Block, 4], [ShadedBlock, 1]]);
     }
 
     constructor(level, numBlocks) {
@@ -114,7 +129,7 @@ class ZapNShadedBlocksObjective extends Objective {
 
 class ZapNSleepingBlocksObjective extends Objective {
     static get BlockTypes() {
-        return new Map([[Block, 4.0], [SleepyBlock, 1.0]]);
+        return new Map([[Block, 4], [SleepyBlock, 1]]);
     }
 
     constructor(level, numBlocks) {
@@ -135,7 +150,7 @@ class ZapNSleepingBlocksObjective extends Objective {
 
 class ZapNRudeBlocksObjective extends Objective {
     static get BlockTypes() {
-        return new Map([[Block, 6.0], [RudeBlock, 1.0]]);
+        return new Map([[Block, 6], [RudeBlock, 1]]);
     }
 
     constructor(level, numBlocks) {
@@ -179,7 +194,7 @@ class SettleNShapes extends Objective {
 
 class SettleNShapesWithConfusedBlocks extends Objective {
     static get BlockTypes() {
-        return new Map([[Block, 6.0], [ConfusedBlock, 1.0]]);
+        return new Map([[Block, 6], [ConfusedBlock, 1]]);
     }
 
     constructor(level, numShapes) {

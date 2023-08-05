@@ -693,7 +693,7 @@ class Level extends GameObject {
 				ScoreReporter.report(0, /*onSuccess=*/() => alert('Rapporterade in poäng!'));
 				Controller.instance.showGameOver();
 			},
-			/*BlockType=*/new Array(4).fill(null).map(_ => this.objective.randomBlock()),
+			/*BlockType=*/this.objective.getNextBlocks(4),
 		);
 
 		if (setCurrentShape) {
