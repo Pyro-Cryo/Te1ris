@@ -39,6 +39,7 @@ class Block extends EffectObject {
         Controller.instance.registerObject(this, this.layer);
         this.updatePositionAndRescale();
         this.isSettled = false;
+        this.isChangingLayer = false;
     }
 
     rowToLayer(row) {
@@ -54,6 +55,7 @@ class Block extends EffectObject {
             return;
         Controller.instance.scheduleLayerChange(this, this._layer, value);
         this._layer = value;
+        this.isChangingLayer = true;
     }
 
     get row() {
@@ -94,6 +96,7 @@ class Block extends EffectObject {
 
     update(delta) {
         super.update(delta);
+        this.isChangingLayer = false;
         if (this.walkingPathRowColumn !== null) {
             this.walkingProgress += delta * this.walkingSpeed / this.walkingPathRowColumn.length;
 
@@ -206,7 +209,12 @@ class Block extends EffectObject {
         this.updatePositionAndRescale();
         num ??= Math.floor(Math.random() * 5) + 7;
         for (let i = 0; i < num; i++) {
-            new FireParticle(this);
+            const fire = new FireParticle(this);
+            if (this.isChangingLayer) {
+                // The block is moving between layers and will be appended and drawn after the fires.
+                // Make sure the fires are moved after the block in this layer, so that they are drawn on top.
+                Controller.instance.scheduleLayerChange(fire, this.layer, this.layer);
+            }
         }
     }
 
