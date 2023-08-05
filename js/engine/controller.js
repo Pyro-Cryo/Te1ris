@@ -83,7 +83,7 @@ class Controller {
 
         // Soundtrack stuff.
         this.currentMusic = null;
-        this.volume = 0.2;
+        this.volume = 0.1;
         this.musicSpeedupOnFF = musicFF;
         this.muted = !!window.localStorage.getItem(this.constructor.STORAGE_PREFIX + "mute");
         if (this.muteButton)

@@ -49,6 +49,28 @@ class Shape extends GameObject {
     }
 
     /**
+     * @param {(typeof Block)[]} BlockTypes 
+     */
+    static selectBlockImages(BlockTypes) {
+        // TODO: Se till att t.ex. frågvisa block alltid väljer gruppen med frågvisa fadderiet.
+        const [group, numImages] = FADDER_GROUPS[Math.floor(Math.random() * FADDER_GROUPS.length)];
+        if (numImages < 1) {
+            throw new Error(`No images for selected group: ${group}`);
+        }
+        const fadderGroup = FADDER_IMAGES.get(group);
+        const imageIndices = new Array(numImages).fill(0).map((_, i) => i);
+        return BlockTypes.map(_ => {
+            let imageIndex;
+            if (imageIndices.length === 1) {
+                imageIndex = imageIndices[0];
+            } else {
+                [imageIndex] = imageIndices.splice(Math.floor(Math.random() * imageIndices.length), 1);
+            }
+            return Resource.getAsset(fadderGroup[imageIndex]);
+        });
+    }
+
+    /**
      * @param {Number} row
      * @param {Number} column
      * @param {Level} level 
@@ -77,20 +99,14 @@ class Shape extends GameObject {
             onCannotCreate();
             return;
         }
-        const [group, numImages] = FADDER_GROUPS[Math.floor(Math.random() * FADDER_GROUPS.length)];
-        const imageIndices = new Array(numImages).fill(0).map((_, i) => i);
-        this.blocks = blockCoords.map(
-            pos => {
-                const BlockType = BlockTypes.pop();
-                const imageIndex = imageIndices.length > 1 ? imageIndices.splice(Math.floor(Math.random() * imageIndices.length), 1)[0] : imageIndices[0];
-
-                return new BlockType(
-                    pos[0],
-                    pos[1],
-                    this.level,
-                    Resource.getAsset(FADDER_IMAGES.get(group)[imageIndex]),
-                );
-            }
+        const blockImages = this.constructor.selectBlockImages(BlockTypes);
+        this.blocks = BlockTypes.map(
+            (BlockType, i) => new BlockType(
+                blockCoords[i][0],
+                blockCoords[i][1],
+                this.level,
+                blockImages[i],
+            )
         );
     }
     
