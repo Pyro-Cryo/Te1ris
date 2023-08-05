@@ -351,6 +351,7 @@ class Level extends GameObject {
 		this.spawningPosition = [this.numRows - 1, firstColumnInLastRow + 1];
 		/** @type {?Shape} */
 		this.currentShape = null;
+		this.shapePool = new InfiniteBag(SHAPES, /*copies=*/2);
 		this.objective = new ClearNRowsObjective(this, 1);
 		this.spawnShape();
 		this.MOVE_TIME = 2000;
@@ -362,6 +363,13 @@ class Level extends GameObject {
 
 		document.body.addEventListener("keydown", this.onKeyDown.bind(this));
 	}
+
+	/**
+	 * @returns {typeof Shape}
+	 */
+    nextShape() {
+        return this.shapePool.peek();
+    }
 
 	update(delta) {
 		super.update(delta);
@@ -672,15 +680,20 @@ class Level extends GameObject {
 
 	spawnShape() {
 		let setCurrentShape = true;
-		const spawned = this.objective.spawnShape(
+
+		const ShapeType = this.shapePool.pop();
+		const spawned = new ShapeType(
 			/*row=*/this.spawningPosition[0],
 			/*column=*/this.spawningPosition[1],
+			/*level=*/this,
 			/*onCannotCreate=*/() => {
 				this.currentShape = null;
 				setCurrentShape = false;
+				// TODO: Ta bort alert!
 				ScoreReporter.report(0, /*onSuccess=*/() => alert('Rapporterade in poäng!'));
 				Controller.instance.showGameOver();
 			},
+			/*BlockType=*/new Array(4).fill(null).map(_ => this.objective.randomBlock()),
 		);
 
 		if (setCurrentShape) {

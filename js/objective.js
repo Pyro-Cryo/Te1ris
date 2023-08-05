@@ -17,9 +17,7 @@ class Objective {
         this.level = level;
         this.descriptionShort = descriptionShort;
         this.descriptionLong = descriptionLong || descriptionShort;
-        this.shapePool = [];
 
-        this.fillShapePool();
         if (progressResetTime > 0) {
             // Det är trevligt att få se att man kom upp i 100%,
             // så vänta lite med att nolla progress baren.
@@ -32,15 +30,6 @@ class Objective {
     initializeUIElements() {
         Controller.instance.setObjectiveShortDescription(this.descriptionShort);
         this.setProgress(0);
-    }
-
-    fillShapePool() {
-        const shuffled = shuffle(SHAPES.concat(SHAPES));
-        this.shapePool = shuffled.concat(this.shapePool);
-    }
-
-    nextShape() {
-        return this.shapePool[this.shapePool.length - 1];
     }
 
     onShapeSettled(shape) {}
@@ -64,22 +53,6 @@ class Objective {
                 return block;
             }
         }
-    }
-
-    spawnShape(row, column, onCannotCreate) {
-        const ShapeType = this.shapePool.pop();
-        const spawned = new ShapeType(
-            /*row=*/row,
-            /*column=*/column,
-            /*level=*/this.level,
-            /*onCannotCreate=*/onCannotCreate,
-            /*BlockType=*/new Array(4).fill(null).map(_ => this.randomBlock()),
-        );
-
-        if (this.shapePool.length === 0) {
-            this.fillShapePool();
-        }
-        return spawned;
     }
 
     // Progress is in the range 0-1.

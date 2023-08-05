@@ -11,3 +11,44 @@ function shuffle(array) {
     }
     return result;
 }
+
+class InfiniteBag {
+    /**
+     * @param {any[]} elements 
+     * @param {number} copies 
+     */
+    constructor(elements = [], copies = 1) {
+        this.fill(elements, copies);
+    }
+
+    /**
+     * @param {any[]} elements 
+     * @param {number} copies 
+     */
+    fill(elements, copies = 1) {
+        if (copies < 0)
+            throw new Error(`Number of copies cannot be negative, got: ${copies}`);
+        this._elements = [].concat(...elements.map(element => new Array(copies).fill(element)));
+        this.reshuffle();
+    }
+
+    reshuffle() {
+        this._shuffled = shuffle(this._elements);
+    }
+
+    peek() {
+        if (this._elements.length === 0)
+            throw new Element('Bag is empty, fill it first');
+        return this._shuffled[this._shuffled.length - 1];
+    }
+
+    pop() {
+        if (this._elements.length === 0)
+            throw new Element('Bag is empty, fill it first');
+        const element = this._shuffled.pop();
+        if (this._shuffled.length === 0) {
+            this.reshuffle();
+        }
+        return element;
+    }
+}
