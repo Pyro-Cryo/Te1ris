@@ -162,3 +162,8 @@ body {
 		position: absolute;
 		top: 0;
 	}
+
+.caption {
+	font-style: italic;
+	text-align: center;
+}

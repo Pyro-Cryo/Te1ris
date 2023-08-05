@@ -151,6 +151,16 @@ class Block extends EffectObject {
         return true;
     }
 
+    /**
+     * @param {GameArea} gameArea 
+     */
+    drawPreview(gameArea) {
+        this.x = gameArea.gridWidth / 2;
+        this.y = gameArea.gridHeight / 2;
+        this.rescaleEffects(this.scale / this.baseScale);
+        super.draw(gameArea);
+    }
+
     draw(gameArea) {
         if (this.updatePositionAndRescale())
             super.draw(gameArea);

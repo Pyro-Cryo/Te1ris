@@ -1,6 +1,7 @@
 "use strict";
 
 const music = Resource.addAsset("audio/myrstacken.mp3", LoopableAudioWithTail);
+const REMOVE_ON_MODAL_CLOSE = 'removeOnModalClose';
 
 class ModalButton {
 	/**
@@ -25,6 +26,38 @@ class TogglableModalButton extends ModalButton {
 	}
 }
 
+class BlockIntroduction {
+	/**
+	 * @param {typeof Block} BlockType 
+	 * @param {string} blockName 
+	 * @param {string} message 
+	 */
+	constructor(BlockType, blockName, message) {
+		this.BlockType = BlockType;
+		this.blockName = blockName;
+		this.message = message;
+	}
+
+	getImage() {
+		const level = Controller.instance.level;
+		const [blockImage] = Shape.selectBlockImages([this.BlockType]);
+		const block = new this.BlockType(0, Math.floor(level.numColumns / 2), level, blockImage);
+		block.prerender();
+
+		try {
+			const canvas = document.createElement("canvas");
+			canvas.width = 5 * block.imagecache.width;
+			canvas.height = 1.5 * block.imagecache.height;
+			const tempGameArea = new GameArea(canvas, null, null);
+			block.drawPreview(tempGameArea);
+
+			return canvas;
+		} finally {
+			block.despawn();
+		}
+	}
+}
+
 class TetrisController extends Controller {
 
 	static get WIDTH_PX() { return 1440;}
@@ -42,6 +75,7 @@ class TetrisController extends Controller {
 		};
 		this.modalElement = document.getElementById("modal");
 
+		this.fadderFigureCounter = 1;
 		this.hasSeenIntroduction = false;
 		this.stateProperties = ["hasSeenIntroduction"];
 		this.level = null;
@@ -142,7 +176,7 @@ class TetrisController extends Controller {
 
 	/**
 	 * @param {ModalButton[]} buttons 
-	 * @param {?string} message 
+	 * @param {string | BlockIntroduction | null} message 
 	 * @param {string} title 
 	 */
 	displayModal(buttons, message = null, title = "Pausat") {
@@ -153,15 +187,22 @@ class TetrisController extends Controller {
 		titleElement.innerText = title;
 		if (message === null) {
 			messageElement.classList.add('hidden');
+		} else if (message instanceof BlockIntroduction) {
+			const canvas = messageElement.insertAdjacentElement('beforebegin', message.getImage());
+			canvas.classList.add(REMOVE_ON_MODAL_CLOSE);
+			const caption = document.createElement('div');
+			caption.innerText = `Fig. ${this.fadderFigureCounter++}: ${message.blockName}.`;
+			messageElement.insertAdjacentElement('beforebegin', caption);
+			caption.classList.add('caption');
+			caption.classList.add(REMOVE_ON_MODAL_CLOSE);
+
+			messageElement.innerText = message.message;
+			messageElement.classList.remove('hidden');
 		} else {
 			messageElement.innerText = message;
 			messageElement.classList.remove('hidden');
 		}
 
-		// Delete from the end, keep the template element.
-		while (this.modalElement.lastElementChild !== buttonTemplate) {
-			this.modalElement.lastElementChild.remove();
-		}
 		for (const button of buttons) {
 			/** @type {HTMLButtonElement} */
 			const buttonElement = buttonTemplate.cloneNode(/*deep=*/true);
@@ -194,17 +235,22 @@ class TetrisController extends Controller {
 					buttonElement.classList.remove("hidden");
 				}
 				this.modalElement.appendChild(clickedButtonElement);
+				clickedButtonElement.classList.add(REMOVE_ON_MODAL_CLOSE);
 			} else {
 				buttonElement.addEventListener("click", button.onClick);
 				buttonElement.classList.remove("hidden");
 			}
 			this.modalElement.appendChild(buttonElement);
+			buttonElement.classList.add(REMOVE_ON_MODAL_CLOSE);
 		}
 		this.modalElement.classList.remove("hidden");
 	}
 
 	closeModal() {
 		this.modalElement.classList.add("hidden");
+		for (const element of this.modalElement.querySelectorAll(`.${REMOVE_ON_MODAL_CLOSE}`)) {
+			element.remove();
+		}
 	}
 
 	get isModalOpen() {
@@ -418,6 +464,44 @@ class TetrisController extends Controller {
 			+ (score > 0 ? `Du lyckades samla ihop ${score} poäng!` : `Det blev tyvärr inga poäng den här gången :(`),
 			"Åh nej!",
 		);
+	}
+
+	/**
+	 * @param {typeof Block} BlockType 
+	 */
+	showBlockIntroduction(BlockType) {
+		let message, name;
+		switch (BlockType) {
+			case ConfusedBlock:
+				name = "Förvirrad och vilsen fadder";
+				message = "Förvirrade faddrar går efter ett litet tag, eftersom de egentligen skulle till en nummeföreläsning och råkat ta fel sal. Om de satt sig i mitten av en klunga kan det uppstå tomma platser som andra faddrar har svårt att nå.";
+				break;
+			case RudeBlock:
+				name = "Dryg fadder";
+				message = "Vissa faddrar är lite dryga och tänker inte på andra, och breder därför ut sig på sätena bredvid. Skulle sätet bredvid vara upptaget har de iallafall folkvett nog att inte lägga sakerna ovanpå bänkgrannen i fråga.";
+				break;
+			case SleepyBlock:
+				name = "Sömnig fadder";
+				message = "Många har någon gång nickat till under en föreläsning, men vissa faddrar har så rubbad dygnsrytm att huvuddelen av deras sömn fås till en föreläsares hypnotiserande stämma. Ser du en fadder med kudde kan du räkna med att de snart slumrar till, och då kanske de inte hänger med när övriga flyttar ner i salen.";
+				break;
+			case ShadedBlock:
+				name = "Cool fadder";
+				message = "Man kan vara cool utan solglasögon, men det är dumt att chansa. En del är så coola att de har på sig solglasögon inomhus. Somliga påstår att Föhseriet är så coola att de sover i solglasögon, andra att de inte sover överhuvudtaget. Säkert är iallafall att solglasögon skyddar mot Föhseriets ljungeldsblick, åtminstone en (1) gång.";
+				break;
+			default:
+				console.error(`Det finns ingen introduktion för blocktyp ${BlockType.name}`)
+				return;
+		}
+		super.onPause();
+		this.displayModal(
+			/*buttons=*/[
+				new ModalButton("Fortsätt", "\ue037", () => this.onPlay()),
+			],
+			new BlockIntroduction(BlockType, name, message),
+			'Ny faddertyp'
+		);
+		if (this.currentMusic)
+			this.currentMusic.pause();
 	}
 }
 
