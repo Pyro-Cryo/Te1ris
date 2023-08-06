@@ -348,11 +348,17 @@ class Level extends GameObject {
 		// Used in computing the block scale.
 		this.distanceLastRow = lastRow[firstColumnInLastRow + 1][0] - lastRow[firstColumnInLastRow][0];
 
+		this.objectiveFactories = [
+			() => new ClearNRowsObjective(this, 1),
+		];
+		this.onObjectiveCompleted();
+		this.hasShownYouWon = false;
+		this.totalTime = 0;
+
 		this.spawningPosition = [this.numRows - 1, firstColumnInLastRow + 1];
 		/** @type {?Shape} */
 		this.currentShape = null;
 		this.shapePool = new InfiniteBag(SHAPES, /*copies=*/2);
-		this.objective = new ClearNRowsObjective(this, 1);
 		this.spawnShape();
 		this.MOVE_TIME = 2000;
 		this.moveTimer = 2000;
@@ -360,8 +366,6 @@ class Level extends GameObject {
 		this.CHECK_COMPLETE_ROWS_TIME = 1000;
 		this.checkCompleteRowsTimer = -1;
 		this.zapTimeout = null;
-
-		document.body.addEventListener("keydown", this.onKeyDown.bind(this));
 	}
 
 	/**
@@ -373,6 +377,7 @@ class Level extends GameObject {
 
 	update(delta) {
 		super.update(delta);
+		this.totalTime += delta;
 		this.moveTimer -= delta;
 		if (this.moveTimer < 0) {
 			this.moveTimer += this.MOVE_TIME;
@@ -689,8 +694,6 @@ class Level extends GameObject {
 			/*onCannotCreate=*/() => {
 				this.currentShape = null;
 				setCurrentShape = false;
-				// TODO: Ta bort alert!
-				ScoreReporter.report(0, /*onSuccess=*/() => alert('Rapporterade in poäng!'));
 				Controller.instance.showGameOver();
 			},
 			/*BlockType=*/this.objective.getNextBlocks(4),
@@ -820,50 +823,30 @@ class Level extends GameObject {
 	}
 
 	onObjectiveCompleted() {
-		// TODO: Välja level i nån kul ordning.
-		switch (Math.floor(Math.random() * 8)) {
-			case 0:
-				this.objective = new ClearNRowsObjective(
-					this, Math.floor(Math.random() * 3) + 2);
-				break;
-
-			case 1:
-				this.objective = new ZapNBlocksObjective(
-					this, Math.floor(Math.random() * 4 + 2) * 5);
-				break;
-
-			case 2:
-				this.objective = new SettleNShapes(
-					this, Math.floor(Math.random() * 4 + 2) * 5);
-				break;
-
-			case 3:
-				this.objective = new SettleNShapes(
-					this,
-					Math.floor(Math.random() * 4 + 2),
-				 	/*shapeTypeRestriction=*/SHAPES[Math.floor(Math.random() * SHAPES.length)]
-				);
-				break;
-
-			case 4:
-				this.objective = new ZapNShadedBlocksObjective(
-					this, Math.floor(Math.random() * 4 + 2));
-				break;
-
-			case 5:
-				this.objective = new SettleNShapesWithConfusedBlocks(
-					this, Math.floor(Math.random() * 4 + 2));
-				break;
-
-			case 6:
-				this.objective = new ZapNSleepingBlocksObjective(
-					this, Math.floor(Math.random() * 4 + 2));
-				break;
-
-			case 7:
-				this.objective = new ZapNRudeBlocksObjective(
-					this, Math.floor(Math.random() * 4 + 2));
-				break;
+		if (this.objectiveFactories.length > 0) {
+			const [objectiveFactory] = this.objectiveFactories.splice(0, 1);
+			this.objective = objectiveFactory();
+			return;
 		}
+
+		if (!this.hasShownYouWon) {
+			Controller.instance.showYouWon(this.totalTime);
+			this.hasShownYouWon = true;
+		}
+		const infiniteObjectives = [
+			() => new ClearNRowsObjective(this, Math.floor(Math.random() * 3) + 2),
+			() => new ZapNBlocksObjective(this, Math.floor(Math.random() * 4 + 2) * 5),
+			() => new SettleNShapes(this, Math.floor(Math.random() * 4 + 2) * 5),
+			() => new SettleNShapes(
+				this,
+				Math.floor(Math.random() * 4 + 2),
+				 /*shapeTypeRestriction=*/SHAPES[Math.floor(Math.random() * SHAPES.length)],
+			),
+			() => new ZapNShadedBlocksObjective(this, Math.floor(Math.random() * 4 + 2)),
+			() => new SettleNShapesWithConfusedBlocks(this, Math.floor(Math.random() * 4 + 2)),
+			() => new ZapNSleepingBlocksObjective(this, Math.floor(Math.random() * 4 + 2)),
+			() => new ZapNRudeBlocksObjective(this, Math.floor(Math.random() * 4 + 2)),
+		];
+		this.objective = infiniteObjectives[Math.floor(Math.random() * infiniteObjectives.length)]();
 	}
 }

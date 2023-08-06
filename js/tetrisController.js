@@ -77,7 +77,8 @@ class TetrisController extends Controller {
 
 		this.fadderFigureCounter = 1;
 		this.hasSeenIntroduction = false;
-		this.stateProperties = ["hasSeenIntroduction"];
+		this.bestTotalTime = -1;
+		this.stateProperties = ["hasSeenIntroduction", "bestTotalTime"];
 		this.level = null;
 		this.touchControls = new TouchControls(
 			/*element=*/this.gameArea.canvas,
@@ -183,6 +184,23 @@ class TetrisController extends Controller {
 		const titleElement = document.getElementById("modalTitle");
 		const messageElement = document.getElementById("modalMessage");
 		const buttonTemplate = document.getElementById("buttonTemplate");
+		
+		// Cleanup old buttons etc.
+		for (const element of this.modalElement.querySelectorAll(`.${REMOVE_ON_MODAL_CLOSE}`)) {
+			element.remove();
+		}
+
+		const createButton = (label, icon) => {
+			const newButton = buttonTemplate.cloneNode(/*deep=*/true);
+			newButton.removeAttribute("id");
+			const [buttonLabel] = newButton.getElementsByClassName("buttonLabel");
+			const [buttonIcon] = newButton.getElementsByClassName("buttonIcon");
+			buttonLabel.innerText = label;
+			buttonIcon.innerText = icon;
+			this.modalElement.appendChild(newButton);
+			newButton.classList.add(REMOVE_ON_MODAL_CLOSE);
+			return newButton;
+		};
 
 		titleElement.innerText = title;
 		if (message === null) {
@@ -205,18 +223,10 @@ class TetrisController extends Controller {
 
 		for (const button of buttons) {
 			/** @type {HTMLButtonElement} */
-			const buttonElement = buttonTemplate.cloneNode(/*deep=*/true);
-			const [buttonLabel] = buttonElement.getElementsByClassName("buttonLabel");
-			const [buttonIcon] = buttonElement.getElementsByClassName("buttonIcon");
-			buttonLabel.innerText = button.label;
-			buttonIcon.innerText = button.icon;
+			const buttonElement = createButton(button.label, button.icon);
 			
 			if (button instanceof TogglableModalButton) {
-				const clickedButtonElement = buttonTemplate.cloneNode(true);
-				const [clickedButtonLabel] = clickedButtonElement.getElementsByClassName("buttonLabel");
-				const [clickedButtonIcon] = clickedButtonElement.getElementsByClassName("buttonIcon");
-				clickedButtonLabel.innerText = button.clickedLabel;
-				clickedButtonIcon.innerText = button.clickedIcon;
+				const clickedButtonElement = createButton(button.clickedLabel, button.clickedIcon);
 
 				buttonElement.addEventListener("click", e => {
 					buttonElement.classList.add("hidden");
@@ -234,14 +244,10 @@ class TetrisController extends Controller {
 				} else {
 					buttonElement.classList.remove("hidden");
 				}
-				this.modalElement.appendChild(clickedButtonElement);
-				clickedButtonElement.classList.add(REMOVE_ON_MODAL_CLOSE);
 			} else {
 				buttonElement.addEventListener("click", button.onClick);
 				buttonElement.classList.remove("hidden");
 			}
-			this.modalElement.appendChild(buttonElement);
-			buttonElement.classList.add(REMOVE_ON_MODAL_CLOSE);
 		}
 		this.modalElement.classList.remove("hidden");
 	}
@@ -271,6 +277,8 @@ class TetrisController extends Controller {
 					this.onPlay();
 					e.preventDefault();
 				}
+			} else {
+				this.level.onKeyDown(e);
 			}
 		}, true);
 	}
@@ -291,6 +299,7 @@ class TetrisController extends Controller {
 	loadState() {
 		const defaultState = {
 			hasSeenIntroduction: false,
+			bestTotalTime: -1,
 		};
 		let data = window.localStorage.getItem(this.STORAGE_PREFIX + "state");
 		if (data)
@@ -444,6 +453,8 @@ class TetrisController extends Controller {
 			new ModalButton("Spela igen", "\ue042", () => this.restart()),
 		];
 		const score = 0;  // TODO: Poängsystem, och hämta poängen hit.
+		// TODO: Ta bort alert!
+		ScoreReporter.report(score, /*onSuccess=*/() => alert(`Rapporterade in ${score} poäng!`));
 		// Detta kanske kan klassas som BM, men det hjälper säkert någon.
 		if (score < 100) {
 			buttons.push(
@@ -502,6 +513,52 @@ class TetrisController extends Controller {
 		);
 		if (this.currentMusic)
 			this.currentMusic.pause();
+	}
+
+	showYouWon(totalTime) {
+		if (!this.isPaused) {
+			super.onPause();
+			if (this.currentMusic)
+				this.currentMusic.pause();
+		}
+		const buttons = [
+			new ModalButton("Spela vidare", "\ue037", () => this.onPlay()),
+			new ModalButton("Börja om", "\ue042", () => this.restart()),
+		];
+		let timeSentence;
+		const formatTimestamp = milliseconds => {
+			const parts = [];
+			const MS_IN_MINUTE = 1000 * 60;
+			const MS_IN_HOUR = MS_IN_MINUTE * 60;
+			if (milliseconds > MS_IN_HOUR) {
+				parts.push(Math.floor(milliseconds / MS_IN_HOUR));
+				milliseconds -= parts[parts.length - 1] * MS_IN_HOUR;
+			}
+			parts.push(Math.floor(milliseconds / MS_IN_MINUTE));
+			milliseconds -= parts[parts.length - 1] * MS_IN_MINUTE;
+			parts.push(Math.floor(milliseconds / 1000));
+			return parts.map(x => x < 10 ? `0${x}` : `${x}`).join(':');
+		};
+		if (this.bestTotalTime === -1 || this.bestTotalTime === undefined) {
+			timeSentence = `Du klarade det på ${formatTimestamp(totalTime)}.`;
+			this.bestTotalTime = totalTime;
+			this.saveState();
+		} else if (totalTime < this.bestTotalTime) {
+			timeSentence = `Du klarade det på ${formatTimestamp(totalTime)}, vilket är nytt personbästa! Ditt tidigare var ${formatTimestamp(this.bestTotalTime)}.`;
+			this.bestTotalTime = totalTime;
+			this.saveState();
+		} else {
+			timeSentence = `Du klarade det på ${formatTimestamp(totalTime)} (men ditt personbästa är ${formatTimestamp(this.bestTotalTime)}).`;
+		}
+		const score = 0;  // TODO: Poängsystem, och hämta poängen hit.
+		// TODO: Ta bort alert!
+		ScoreReporter.report(score, /*onSuccess=*/() => alert(`Rapporterade in ${score} poäng!`));
+
+		this.displayModal(
+			buttons,
+			`Aldrig tidigare har det gått in så många nyfikna studenter i en föreläsningssal. Du har samlat ihop ${score} poäng, vilket är det maximala! ${timeSentence}\n\nDu kan fortsätta spela med slumpmässiga mål, börja om från början för att försöka slå din rekordtid, eller passa på att skryta om hur bra du är på Tetris för någon du inte pratat med ännu.\n\nTack för att du spelade! :)`,
+			"Grattis!",
+		);
 	}
 }
 
