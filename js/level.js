@@ -349,12 +349,58 @@ class Level extends GameObject {
 		// Used in computing the block scale.
 		this.distanceLastRow = lastRow[firstColumnInLastRow + 1][0] - lastRow[firstColumnInLastRow][0];
 
+		const rudeBlocksCommon = new Map([[Block, 5], [RudeBlock, 1]]);
+		const shadedBlocksCommon = new Map([[Block, 6], [ShadedBlock, 1]]);
+		const rudeAndShadedBlocks = new Map([[Block, 10], [RudeBlock, 1], [ShadedBlock, 1]]);
+		const confusedBlocksCommon = new Map([[Block, 6], [ConfusedBlock, 1]]);
+		const confusedAndRudeBlocks = new Map([[Block, 10], [RudeBlock, 1], [ConfusedBlock, 1]]);
+		const confusedAndRudeAndShadedBlocks = new Map([[Block, 12], [RudeBlock, 1], [ConfusedBlock, 1], [ShadedBlock, 1]]);
+		const sleepyBlocksCommon = new Map([[Block, 7], [SleepyBlock, 1]]);
+		const sleepyAndRudeBlocks = new Map([[Block, 8], [SleepyBlock, 1], [RudeBlock, 1]]);
+		const confusedBlocksOverrepresented = new Map([[Block, 15], [ConfusedBlock, 3], [SleepyBlock, 1], [RudeBlock, 1], [ShadedBlock, 1]]);
+		const allFourKindsCommon =  new Map([[Block, 6], [SleepyBlock, 1], [RudeBlock, 1], [ShadedBlock, 1], [ConfusedBlock, 1]]);
 		this.objectiveFactories = [
+			// Enkelt mål så alla får någon poäng iallafall.
+			() => new SettleNShapesObjective(this, 10),
+			// Börjar kräva att man kan styra litegrann.
 			() => new ClearNRowsObjective(this, 2),
-			() => new SettleNShapes(this, 2),
+			// Visa upp alla sorters mål innan vi blandar in konstiga block.
+			() => new ZapNBlocksObjective(this, 20),
+			
+			// Dryga faddrar är typ lättare än vanliga, så visa dem först.
+			() => new SettleNShapesWithRudeBlockIntroductionObjective(this, 5, rudeBlocksCommon),
+			() => new ClearNRowsObjective(this, 4, rudeBlocksCommon),
+			() => new ZapNBlocksObjective(this, 25, rudeBlocksCommon),
+			
+			// Coola faddrar är lagom svåra.
+			() => new ZapNShadedBlocksWithIntroductionObjective(this, 10, shadedBlocksCommon),
+			() => new ClearNRowsObjective(this, 4, shadedBlocksCommon),
+			() => new SettleNShapesWithBlockObjective(this, 10, rudeAndShadedBlocks, ShadedBlock),
+			() => new ClearNRowsSimultaneouslyObjective(this, 2, rudeAndShadedBlocks),
+			
+			// Vilsna faddrar kan vara halvsvåra.
+			() => new ZapNBlocksWithConfusedIntroductionObjective(this, 20, confusedBlocksCommon),
+			() => new ClearNRowsObjective(this, 5, confusedAndRudeBlocks),
+			() => new SettleNShapesWithBlockObjective(this, 5, confusedAndRudeAndShadedBlocks, ConfusedBlock),
+			// Skicka bara vanliga block ett tag för att låta spelaren cleara ner till andra raden.
+			// Vi ska strax skicka sömniga faddrar och då vill vi att spelaren har en chans.
+			() => new ClearSpecificRowObjective(this, 1),
+
+			// Sömniga faddrar kan totalkaosa.
+			() => new ZapNSleepyBlocksWithIntroductionObjective(this, 10, sleepyBlocksCommon),
+			() => new ClearNRowsSimultaneouslyObjective(this, 3, sleepyAndRudeBlocks),
+			() => new SettleNShapesObjective(this, 15, sleepyAndRudeBlocks),
+			
+			// Föhsare etc. TBA
+			() => new ClearSpecificRowObjective(this, 0, confusedBlocksOverrepresented),
+			// Förvirrade block springer ju iväg snabbt, så behövs en del skicklighet för att zappa dem innan de drar.
+			() => new ZapNBlocksObjective(this, 4, confusedBlocksOverrepresented),
+			// Avsluta på topp med att cleara fyra rader samtidigt och se ÖF-dubletterna.
+			() => new ClearNRowsSimultaneouslyObjective(this, 4, allFourKindsCommon),
 		];
 		this.numCompletedObjectives = -1;
 		this.numTotalObjectives = this.objectiveFactories.length;
+		this.numCompletedBonusObjectives = 0;
 		this.onObjectiveCompleted();
 		this.hasShownYouWon = false;
 		this.totalTime = 0;
@@ -396,6 +442,8 @@ class Level extends GameObject {
 			if (this.checkCompleteRowsTimer < 0) {
 				this.checkCompleteRows();
 			}
+		} else if (this.zapTimeout === null) {
+			this.objective.maybeShowIntroduction();
 		}
 	}
 
@@ -792,6 +840,7 @@ class Level extends GameObject {
 					updated_columns_by_row.set(row, this.zapCompletedRow(row));
 					this.objective.onRowCleared(row);
 				}
+				this.objective.onRowsCleared(completed_rows);
 
 				// Perform falldowns from the bottom up, starting from each completed row in reverse order.
 				for (const initialRow of completed_rows.reverse()) {
@@ -858,21 +907,66 @@ class Level extends GameObject {
 			this.numCompletedObjectives++;
 			Controller.instance.showYouWon(this.totalTime);
 			this.hasShownYouWon = true;
+		} else {
+			this.numCompletedBonusObjectives++;
+			this.MOVE_TIME = 2000 - Math.min(1500, 50 * this.numCompletedBonusObjectives);
 		}
-		const infiniteObjectives = [
-			() => new ClearNRowsObjective(this, Math.floor(Math.random() * 3) + 2),
-			() => new ZapNBlocksObjective(this, Math.floor(Math.random() * 4 + 2) * 5),
-			() => new SettleNShapes(this, Math.floor(Math.random() * 4 + 2) * 5),
-			() => new SettleNShapes(
+		
+		this.objective = this.randomObjective();
+	}
+
+	randomObjective() {
+		const AllBlockTypes = [RudeBlock, SleepyBlock, ShadedBlock, ConfusedBlock];
+		const RandomBlockType = AllBlockTypes[Math.floor(Math.random() * AllBlockTypes.length)];
+		const RandomBlockTypeSubset = AllBlockTypes.filter(Type => Type === RandomBlockType || Math.random() < 0.4);
+		const RandomShapeType = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+		const randomLowNumber = () => Math.floor(Math.random() * (3 + this.numCompletedBonusObjectives)) + 2;
+		const randomHighNumber = () => Math.floor(Math.random() * 4 + 2) * 5;
+		const RandomBlockTypeDistribution = new Map([
+			[Block, randomHighNumber()],
+			...RandomBlockTypeSubset.map(Type => [Type, randomLowNumber()])
+		]);
+
+		const randomObjectives = [
+			() => new ClearNRowsObjective(
 				this,
-				Math.floor(Math.random() * 4 + 2),
-				 /*shapeTypeRestriction=*/SHAPES[Math.floor(Math.random() * SHAPES.length)],
+				randomLowNumber(),
+				RandomBlockTypeDistribution,
 			),
-			() => new ZapNShadedBlocksObjective(this, Math.floor(Math.random() * 4 + 2)),
-			() => new SettleNShapesWithConfusedBlocks(this, Math.floor(Math.random() * 4 + 2)),
-			() => new ZapNSleepingBlocksObjective(this, Math.floor(Math.random() * 4 + 2)),
-			() => new ZapNRudeBlocksObjective(this, Math.floor(Math.random() * 4 + 2)),
+			() => new ZapNBlocksObjective(
+				this,
+				randomHighNumber(),
+			),
+			() => new ZapNBlocksObjective(
+				this,
+				randomHighNumber(),
+				RandomBlockTypeDistribution,
+				Math.random() < 0.5 ? null : RandomBlockType,
+			),
+			() => new SettleNShapesObjective(
+				this,
+				randomLowNumber(),
+				Math.random() < 0.5 ? null : RandomShapeType,
+				Math.random() < 0.5 ? null : RandomBlockTypeDistribution,
+			),
+			() => new SettleNShapesWithBlockObjective(
+				this,
+				randomLowNumber(),
+				RandomBlockTypeDistribution,
+				RandomBlockType,
+			),
+			() => new ClearSpecificRowObjective(
+				this,
+				// Cappat till tionde raden i konstruktorn.
+				Math.floor(Math.random() * (1 + this.numCompletedBonusObjectives)),
+				Math.random() < 0.8 ? null : RandomBlockTypeDistribution,
+			),
+			() => new ClearNRowsSimultaneouslyObjective(
+				this,
+				Math.floor(Math.random() * 3 + 2),
+				Math.random() < 0.5 ? null : RandomBlockTypeDistribution,
+			),
 		];
-		this.objective = infiniteObjectives[Math.floor(Math.random() * infiniteObjectives.length)]();
+		return randomObjectives[Math.floor(Math.random() * randomObjectives.length)]();
 	}
 }

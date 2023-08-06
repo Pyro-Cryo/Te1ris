@@ -8,17 +8,21 @@ function plural(num, singular, plural = null) {
     return `${num} ${plural}`;
 }
 
+const DEFAULT_PROGRESS_RESET_TIME = 1000;
+
 class Objective {
     static get BlockTypes() { return new Map([[Block, 1]]); }
     /**
      * @param {Level} level 
      */
-    constructor(level, descriptionShort, descriptionLong = null, progressResetTime = 1000) {
+    constructor(level, descriptionShort, BlockTypes = null, descriptionLong = null, progressResetTime = DEFAULT_PROGRESS_RESET_TIME) {
         this.level = level;
         this.descriptionShort = descriptionShort;
         this.descriptionLong = descriptionLong || descriptionShort;
+
+        BlockTypes ??= this.constructor.BlockTypes;
         const blockPool = [];
-        for (const [BlockType, weight] of this.constructor.BlockTypes.entries()) {
+        for (const [BlockType, weight] of BlockTypes.entries()) {
             for (let i = 0; i < weight; i++) {
                 blockPool.push(BlockType);
             }
@@ -51,6 +55,9 @@ class Objective {
     onBlockSettled(block) {}
     onBlockZapped(block) {}
     onRowCleared(row) {}
+    onRowsCleared(row) {}
+
+    maybeShowIntroduction() {}
 
     // Picks a random block from the classes BlockTypes,
     // considering the different normalized probabilities.
@@ -78,8 +85,8 @@ class Objective {
 }
 
 class ClearNRowsObjective extends Objective {
-    constructor(level, numRows) {
-        super(level, `Rensa ${plural(numRows, "rad")}`);
+    constructor(level, numRows, BlockTypes = null) {
+        super(level, `Rensa ${plural(numRows, "rad")}`, BlockTypes);
         this.numRows = numRows;
         this.remaining = numRows;
     }
@@ -92,14 +99,57 @@ class ClearNRowsObjective extends Objective {
     }
 }
 
+class ClearNRowsSimultaneouslyObjective extends Objective {
+    constructor(level, numRows, BlockTypes = null) {
+        numRows = Math.max(2, Math.min(numRows, 4));
+        super(level, `Rensa ${numRows} rader samtidigt`, BlockTypes);
+        this.numRows = numRows;
+    }
+
+    onRowsCleared(rows) {
+        if (rows.length >= this.numRows) {
+            this.setProgress(1);
+            this.level.onObjectiveCompleted();
+        }
+    }
+}
+
+class ClearSpecificRowObjective extends Objective {
+    constructor(level, row, BlockTypes = null) {
+        row = Math.max(0, Math.min(row, 9));
+        const ordering = ['första', 'andra', 'tredje', 'fjärde', 'femte', 'sjätte', 'sjunde', 'åttonde', 'nionde', 'tionde'][row];
+        super(level, `Rensa den ${ordering} raden`, BlockTypes);
+        this.row = row;
+    }
+
+    onRowCleared(row) {
+        if (row === this.row) {
+            this.setProgress(1);
+            this.level.onObjectiveCompleted();
+        }
+    }
+}
+
 class ZapNBlocksObjective extends Objective {
-    constructor(level, numBlocks) {
-        super(level, `Zappa ${plural(numBlocks, "fadder", "faddrar")}`);
+    constructor(level, numBlocks, BlockTypes = null, blockTypeRestriction = null) {
+        let message;
+        if (blockTypeRestriction !== null) {
+            message = `Zappa ${plural(numBlocks, blockTypeRestriction.adjectiveSingular + " fadder", blockTypeRestriction.adjectivePlural + " faddrar")}`;
+        } else {
+            message = `Zappa ${plural(numBlocks, "fadder", "faddrar")}`;
+        }
+        super(level, message, BlockTypes);
         this.numBlocks = numBlocks;
         this.remaining = numBlocks;
+        this.blockTypeRestriction = blockTypeRestriction;
     }
 
     onBlockZapped(block) {
+        if (this.blockTypeRestriction !== null && !(block instanceof this.blockTypeRestriction))
+            return;
+        if (block instanceof ShadedBlock && block.hp > 0)
+            return;
+
         this.remaining = Math.max(0, this.remaining - 1);
         this.setProgress(1 - this.remaining / this.numBlocks);
         if (this.remaining === 0)
@@ -107,77 +157,14 @@ class ZapNBlocksObjective extends Objective {
     }
 }
 
-class ZapNShadedBlocksObjective extends Objective {
-    static get BlockTypes() {
-        return new Map([[Block, 4], [ShadedBlock, 1]]);
-    }
-
-    constructor(level, numBlocks) {
-        super(level, `Zappa ${plural(numBlocks, "skyddad fadder", "skyddade faddrar")}`);
-        this.numBlocks = numBlocks;
-        this.remaining = numBlocks;
-    }
-
-    onBlockZapped(block) {
-        if (block.constructor.name == ShadedBlock.name && block.hp <= 0) {
-            this.remaining = Math.max(0, this.remaining - 1);
-            this.setProgress(1 - this.remaining / this.numBlocks);
-            if (this.remaining === 0)
-                this.level.onObjectiveCompleted();
-        }
-    }
-}
-
-class ZapNSleepingBlocksObjective extends Objective {
-    static get BlockTypes() {
-        return new Map([[Block, 4], [SleepyBlock, 1]]);
-    }
-
-    constructor(level, numBlocks) {
-        super(level, `Zappa ${plural(numBlocks, "sovande fadder", "sovande faddrar")}`);
-        this.numBlocks = numBlocks;
-        this.remaining = numBlocks;
-    }
-
-    onBlockZapped(block) {
-        if (block.constructor.name == SleepyBlock.name) {
-            this.remaining = Math.max(0, this.remaining - 1);
-            this.setProgress(1 - this.remaining / this.numBlocks);
-            if (this.remaining === 0)
-                this.level.onObjectiveCompleted();
-        }
-    }
-}
-
-class ZapNRudeBlocksObjective extends Objective {
-    static get BlockTypes() {
-        return new Map([[Block, 6], [RudeBlock, 1]]);
-    }
-
-    constructor(level, numBlocks) {
-        super(level, `Zappa ${plural(numBlocks, "dryg fadder", "dryga faddrar")}`);
-        this.numBlocks = numBlocks;
-        this.remaining = numBlocks;
-    }
-
-    onBlockZapped(block) {
-        if (block instanceof RudeBlock) {
-            this.remaining = Math.max(0, this.remaining - 1);
-            this.setProgress(1 - this.remaining / this.numBlocks);
-            if (this.remaining === 0)
-                this.level.onObjectiveCompleted();
-        }
-    }
-}
-
-class SettleNShapes extends Objective {
-    constructor(level, numShapes, shapeTypeRestriction = null) {
+class SettleNShapesObjective extends Objective {
+    constructor(level, numShapes, shapeTypeRestriction = null, BlockTypes = null) {
         let groupPrefix;
         if (shapeTypeRestriction !== null)
             groupPrefix = shapeTypeRestriction.name[shapeTypeRestriction.name.length - 1] + "-";
         else
             groupPrefix = "";
-        super(level, `Placera ${plural(numShapes, groupPrefix + "grupp")}`);
+        super(level, `Placera ${plural(numShapes, groupPrefix + "grupp")}`, BlockTypes);
         this.numShapes = numShapes;
         this.remaining = numShapes;
         this.shapeTypeRestriction = shapeTypeRestriction;
@@ -193,29 +180,87 @@ class SettleNShapes extends Objective {
     }
 }
 
-class SettleNShapesWithConfusedBlocks extends Objective {
-    static get BlockTypes() {
-        return new Map([[Block, 6], [ConfusedBlock, 1]]);
-    }
+class SettleNShapesWithBlockObjective extends Objective {
+    constructor(level, numShapes, BlockTypes = null, blockTypeRestriction = null) {
+        let message;
+        if (blockTypeRestriction !== null)
+            message = `Placera ut ${plural(numShapes, 'grupp')} med ${blockTypeRestriction.adjectivePlural} faddrar`;
+        else
+            message = `Placera ut ${plural(numShapes, 'grupp')}`;
 
-    constructor(level, numShapes) {
-        super(level, `Placera ${plural(numShapes, "grupp")} med vilsna faddrar`);
+        super(level, message, BlockTypes);
         this.numShapes = numShapes;
         this.remaining = numShapes;
+        this.blockTypeRestriction = blockTypeRestriction;
     }
 
     /**
      * @param {Shape} shape 
      */
     onShapeSettled(shape) {
-        if (shape.blocks.some(block => block instanceof ConfusedBlock)) {
-            this.remaining = Math.max(0, this.remaining - 1);
-            this.setProgress(1 - this.remaining / this.numShapes);
-            if (this.remaining === 0)
-                this.level.onObjectiveCompleted();
-        }
+        if (this.blockTypeRestriction !== null && !shape.blocks.some(block => block instanceof this.blockTypeRestriction))
+            return;
+
+        this.remaining = Math.max(0, this.remaining - 1);
+        this.setProgress(1 - this.remaining / this.numShapes);
+        if (this.remaining === 0)
+            this.level.onObjectiveCompleted();
     }
 
 }
 
+class SettleNShapesWithRudeBlockIntroductionObjective extends SettleNShapesWithBlockObjective {
+    static get BlockTypes() { return new Map([[Block, 5], [RudeBlock, 1]]); }
 
+    constructor(level, numShapes, BlockTypes = null) {
+        super(level, numShapes, BlockTypes, RudeBlock);
+    }
+
+    maybeShowIntroduction() {
+        if (Controller.instance.hasSeenBlockIntroduction.indexOf(RudeBlock.name) === -1) {
+            Controller.instance.showBlockIntroduction(RudeBlock);
+        }
+    }
+}
+
+class ZapNShadedBlocksWithIntroductionObjective extends ZapNBlocksObjective {
+    static get BlockTypes() { return new Map([[Block, 6], [ShadedBlock, 1]]); }
+
+    constructor(level, numBlocks, BlockTypes = null) {
+        super(level, numBlocks, BlockTypes, ShadedBlock);
+    }
+
+    maybeShowIntroduction() {
+        if (Controller.instance.hasSeenBlockIntroduction.indexOf(ShadedBlock.name) === -1) {
+            Controller.instance.showBlockIntroduction(ShadedBlock);
+        }
+    }
+}
+
+class ZapNBlocksWithConfusedIntroductionObjective extends ZapNBlocksObjective {
+    static get BlockTypes() { return new Map([[Block, 6], [ConfusedBlock, 1]]); }
+
+    constructor(level, numBlocks, BlockTypes = null) {
+        super(level, numBlocks, BlockTypes);
+    }
+
+    maybeShowIntroduction() {
+        if (Controller.instance.hasSeenBlockIntroduction.indexOf(ConfusedBlock.name) === -1) {
+            Controller.instance.showBlockIntroduction(ConfusedBlock);
+        }
+    }
+}
+
+class ZapNSleepyBlocksWithIntroductionObjective extends ZapNBlocksObjective {
+    static get BlockTypes() { return new Map([[Block, 6], [SleepyBlock, 1]]); }
+
+    constructor(level, numBlocks, BlockTypes = null) {
+        super(level, numBlocks, BlockTypes, SleepyBlock);
+    }
+
+    maybeShowIntroduction() {
+        if (Controller.instance.hasSeenBlockIntroduction.indexOf(SleepyBlock.name) === -1) {
+            Controller.instance.showBlockIntroduction(SleepyBlock);
+        }
+    }
+}

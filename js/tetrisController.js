@@ -77,9 +77,10 @@ class TetrisController extends Controller {
 
 		this.fadderFigureCounter = 1;
 		this.hasSeenIntroduction = false;
+		this.hasSeenBlockIntroduction = [];
 		this.bestTotalTime = -1;
 		this.bestScore = -1;
-		this.stateProperties = ["hasSeenIntroduction", "bestTotalTime", "bestScore"];
+		this.stateProperties = ["hasSeenIntroduction", "hasSeenBlockIntroduction", "bestTotalTime", "bestScore"];
 		this.level = null;
 		this.touchControls = new TouchControls(
 			/*element=*/this.gameArea.canvas,
@@ -278,7 +279,7 @@ class TetrisController extends Controller {
 					this.onPlay();
 					e.preventDefault();
 				}
-			} else {
+			} else if (!this.isPaused) {
 				this.level.onKeyDown(e);
 			}
 		}, true);
@@ -300,6 +301,7 @@ class TetrisController extends Controller {
 	loadState() {
 		const defaultState = {
 			hasSeenIntroduction: false,
+			hasSeenBlockIntroduction: [],
 			bestTotalTime: -1,
 			bestScore: -1,
 		};
@@ -511,7 +513,13 @@ class TetrisController extends Controller {
 		super.onPause();
 		this.displayModal(
 			/*buttons=*/[
-				new ModalButton("Fortsätt", "\ue037", () => this.onPlay()),
+				new ModalButton("Fortsätt", "\ue037", () => {
+					this.onPlay();
+					if (this.hasSeenBlockIntroduction.indexOf(BlockType.name) === -1) {
+						this.hasSeenBlockIntroduction.push(BlockType.name);
+						this.saveState();
+					}
+				}),
 			],
 			new BlockIntroduction(BlockType, name, message),
 			'Ny faddertyp'

@@ -17,6 +17,8 @@ const FADDER_IMAGES = new Map(
 
 class Block extends EffectObject {
     static get scale() { return 0.10; }
+    static get adjectiveSingular() { return "vanlig"; }
+    static get adjectivePlural() { return "vanliga"; }
 
     /**
      * @param {Level} level 
@@ -292,6 +294,9 @@ class SunglassEffect extends ScalingEffect {
 }
 
 class ShadedBlock extends Block {
+    static get adjectiveSingular() { return "cool"; }
+    static get adjectivePlural() { return "coola"; }
+
     constructor(row, column, level, image) {
         super(row, column, level, image);
         this.hp = 2;
@@ -355,6 +360,9 @@ class ConfusedEffect extends ScalingEffect {
 }
 
 class ConfusedBlock extends Block {
+    static get adjectiveSingular() { return "vilsen"; }
+    static get adjectivePlural() { return "vilsna"; }
+
     constructor(row, column, level, image) {
         super(row, column, level, image);
         this.addEffect(new ConfusedEffect());
@@ -446,6 +454,9 @@ class SleepingEffect extends ScalingEffect {
 }
 
 class SleepyBlock extends Block {
+    static get adjectiveSingular() { return "sömnig"; }
+    static get adjectivePlural() { return "sömniga"; }
+
     constructor(row, column, level, image) {
         super(row, column, level, image);
         this.sleepeffect = new SleepyEffect();
@@ -529,6 +540,9 @@ class BackpackEffect extends RudeEffect {
 }
 
 class RudeBlock extends Block {
+    static get adjectiveSingular() { return "dryg"; }
+    static get adjectivePlural() { return "dryga"; }
+
     constructor(row, column, level, image) {
         super(row, column, level, image);
         this.jacketEffect = new JacketEffect();
