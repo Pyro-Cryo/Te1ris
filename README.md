@@ -6,8 +6,8 @@
 - [x] Ta en bättre bild i E1
 - [x] Animationer för Föhsare + ljungeldsblick när en rad försvinner
 - [ ] Visa vilken nästa tetromino är
-- [ ] Poängsystem
-- [ ] Touchkontroller
+- [x] Poängsystem
+- [x] Touchkontroller
 - [ ] Fixa några specialblock (vanliga faddrar med effekter, typ solglasögon)
     - [ ] Frågvisa Fadderister som hela tiden försöker flytta sig närmare tavlan
     - [ ] Föhsare som gör att rader inte kan clearas förrän Föhsarnas rad clearas (dyker upp som en horisontell ShapeI)
