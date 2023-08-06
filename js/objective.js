@@ -73,6 +73,7 @@ class Objective {
     // Progress is in the range 0-1.
     setProgress(progress) {
         Controller.instance.setObjectiveProgress(progress);
+        this.level.updateScore(progress);
     }
 }
 

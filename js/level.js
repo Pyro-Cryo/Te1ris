@@ -299,6 +299,7 @@ const ZAPPING_BLOCKS_REMOVED_TIME = 1000;
 const ZAPPING_TOTAL_ANIMATION_TIME = 1500;
 const AISLE_LEFT = 'AISLE_LEFT';
 const AISLE_RIGHT = 'AISLE_RIGHT';
+const MAX_SCORE = 2000;
 
 class Row extends GameObject {
 	constructor(index, scale) {
@@ -349,11 +350,16 @@ class Level extends GameObject {
 		this.distanceLastRow = lastRow[firstColumnInLastRow + 1][0] - lastRow[firstColumnInLastRow][0];
 
 		this.objectiveFactories = [
-			() => new ClearNRowsObjective(this, 1),
+			() => new ClearNRowsObjective(this, 2),
+			() => new SettleNShapes(this, 2),
 		];
+		this.numCompletedObjectives = -1;
+		this.numTotalObjectives = this.objectiveFactories.length;
 		this.onObjectiveCompleted();
 		this.hasShownYouWon = false;
 		this.totalTime = 0;
+		this.score = 0;
+		this.scoreElement = document.getElementById("score");
 
 		this.spawningPosition = [this.numRows - 1, firstColumnInLastRow + 1];
 		/** @type {?Shape} */
@@ -822,14 +828,28 @@ class Level extends GameObject {
 		this.spawnShape();
 	}
 
+	updateScore(progress) {
+		progress = Math.min(1, Math.max(0, progress));
+		const scorePerObjective = MAX_SCORE / this.numTotalObjectives;
+		this.score = Math.round(scorePerObjective * (this.numCompletedObjectives + progress));
+		if (this.score > Controller.instance.bestScore) {
+			Controller.instance.bestScore = this.score;
+			Controller.instance.saveState();
+			ScoreReporter.report(this.score, /*onSuccess=*/() => alert(`Rapporterade in ${this.score} poäng!`));
+		}
+		this.scoreElement.innerText = this.score;
+	}
+
 	onObjectiveCompleted() {
 		if (this.objectiveFactories.length > 0) {
 			const [objectiveFactory] = this.objectiveFactories.splice(0, 1);
 			this.objective = objectiveFactory();
+			this.numCompletedObjectives++;
 			return;
 		}
 
 		if (!this.hasShownYouWon) {
+			this.numCompletedObjectives++;
 			Controller.instance.showYouWon(this.totalTime);
 			this.hasShownYouWon = true;
 		}

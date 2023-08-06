@@ -78,7 +78,8 @@ class TetrisController extends Controller {
 		this.fadderFigureCounter = 1;
 		this.hasSeenIntroduction = false;
 		this.bestTotalTime = -1;
-		this.stateProperties = ["hasSeenIntroduction", "bestTotalTime"];
+		this.bestScore = -1;
+		this.stateProperties = ["hasSeenIntroduction", "bestTotalTime", "bestScore"];
 		this.level = null;
 		this.touchControls = new TouchControls(
 			/*element=*/this.gameArea.canvas,
@@ -300,6 +301,7 @@ class TetrisController extends Controller {
 		const defaultState = {
 			hasSeenIntroduction: false,
 			bestTotalTime: -1,
+			bestScore: -1,
 		};
 		let data = window.localStorage.getItem(this.STORAGE_PREFIX + "state");
 		if (data)
@@ -308,9 +310,12 @@ class TetrisController extends Controller {
 			data = defaultState;
 		
 		for (const prop of this.stateProperties) {
-			if (!data.hasOwnProperty(prop))
-				console.warn(`Property ${prop} missing in saved state`);
-			this[prop] = data[prop];
+			if (!data.hasOwnProperty(prop)) {
+				console.warn(`Property ${prop} missing in saved state, using default ${defaultState[prop]}`);
+				this[prop] = defaultState[prop];
+			} else {
+				this[prop] = data[prop];
+			}
 		}
 		// console.log("Loaded state", data);
 	}
@@ -452,7 +457,7 @@ class TetrisController extends Controller {
 		const buttons = [
 			new ModalButton("Spela igen", "\ue042", () => this.restart()),
 		];
-		const score = 0;  // TODO: Poängsystem, och hämta poängen hit.
+		const score = this.level.score;
 		// TODO: Ta bort alert!
 		ScoreReporter.report(score, /*onSuccess=*/() => alert(`Rapporterade in ${score} poäng!`));
 		// Detta kanske kan klassas som BM, men det hjälper säkert någon.
@@ -550,7 +555,7 @@ class TetrisController extends Controller {
 		} else {
 			timeSentence = `Du klarade det på ${formatTimestamp(totalTime)} (men ditt personbästa är ${formatTimestamp(this.bestTotalTime)}).`;
 		}
-		const score = 0;  // TODO: Poängsystem, och hämta poängen hit.
+		const score = this.level.score;
 		// TODO: Ta bort alert!
 		ScoreReporter.report(score, /*onSuccess=*/() => alert(`Rapporterade in ${score} poäng!`));
 
