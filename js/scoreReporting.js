@@ -1,4 +1,5 @@
 const SCORE_ENDPOINT = "https://f.kth.se/cyberfohs/set_game_highscore";
+const SCORE_REPORTING_INTERVAL = 10000;
 let ApiSettings = null;
 
 class ScoreReporter {

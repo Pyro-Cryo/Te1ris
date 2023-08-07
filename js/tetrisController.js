@@ -176,7 +176,6 @@ class TetrisController extends Controller {
 		setTimeout(() => this.setMessage("Spelet är trasigt :("), 1000);
 	}
 
-
 	/**
 	 * @param {ModalButton[]} buttons 
 	 * @param {string | BlockIntroduction | null} message 
@@ -283,6 +282,22 @@ class TetrisController extends Controller {
 				this.level.onKeyDown(e);
 			}
 		}, true);
+		setInterval(
+			() => {
+				if (this.level && this.level.score > this.bestScore) {
+					const score = this.level.score;
+					ScoreReporter.report(
+						score,
+						/*onSuccess=*/() => {
+							Controller.instance.bestScore = score;
+							Controller.instance.saveState();
+							alert(`Rapporterade in ${score} poäng!`);
+						},
+					);
+				}
+			},
+			SCORE_REPORTING_INTERVAL,
+		);
 	}
 
 	setCanvasDimensions(barHeight, marginHorizontal, marginVertical = null) {

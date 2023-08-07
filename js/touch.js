@@ -125,39 +125,48 @@ class TouchControls {
      * @param {TouchEvent} event 
      */
     onTouchStart(event) {
-        event.preventDefault();
+        let preventDefault = false;
         const threshold = this.getSignificantMoveThreshold();
         for (const touch of event.changedTouches) {
             if (this.allowedElements.has(touch.target)) {
                 this.gestures.set(touch.identifier, new Gesture(touch.clientX, touch.clientY, threshold));
+                preventDefault = true;
             }
         }
+
+        if (preventDefault)
+            event.preventDefault();
     }
 
     /**
      * @param {TouchEvent} event 
      */
     onTouchMove(event) {
-        event.preventDefault();
+        let preventDefault = false;
         for (const touch of event.changedTouches) {
             const gesture = this.gestures.get(touch.identifier);
             if (!gesture) continue;
+            preventDefault = true;
 
             gesture.update(touch.clientX, touch.clientY);
             if (this.onSwipeHorizontal && gesture.getType() === GestureType.SWIPE_HORIZONTAL) {
                 this.onSwipeHorizontal(this.toRelativeHorizontal(gesture.lastX));
             }
         }
+
+        if (preventDefault)
+            event.preventDefault();
     }
 
     /**
      * @param {TouchEvent} event 
      */
     onTouchEnd(event) {
-        event.preventDefault();
+        let preventDefault = false;
         for (const touch of event.changedTouches) {
             const gesture = this.gestures.get(touch.identifier);
             if (!gesture) continue;
+            preventDefault = true;
             this.gestures.delete(touch.identifier);
 
             switch (gesture.getType()) {
@@ -169,13 +178,17 @@ class TouchControls {
                     break;
             }
         }
+
+        if (preventDefault)
+            event.preventDefault();
     }
 
     /**
      * @param {TouchEvent} event 
      */
     onTouchCancel(event) {
-        event.preventDefault();
+        // What is even the default for a touch cancel event?
+        // event.preventDefault();
         for (const touch of event.changedTouches) {
             this.gestures.delete(touch.identifier);
         }

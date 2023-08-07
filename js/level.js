@@ -881,17 +881,6 @@ class Level extends GameObject {
 		progress = Math.min(1, Math.max(0, progress));
 		const scorePerObjective = MAX_SCORE / this.numTotalObjectives;
 		this.score = Math.round(scorePerObjective * (this.numCompletedObjectives + progress));
-		if (this.score > Controller.instance.bestScore) {
-			const score = this.score;
-			ScoreReporter.report(
-				score,
-				/*onSuccess=*/() => {
-					Controller.instance.bestScore = score;
-					Controller.instance.saveState();
-					alert(`Rapporterade in ${score} poäng!`);
-				},
-			);
-		}
 		this.scoreElement.innerText = this.score;
 	}
 
