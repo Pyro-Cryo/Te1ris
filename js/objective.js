@@ -164,7 +164,7 @@ class SettleNShapesObjective extends Objective {
             groupPrefix = shapeTypeRestriction.name[shapeTypeRestriction.name.length - 1] + "-";
         else
             groupPrefix = "";
-        super(level, `Placera ${plural(numShapes, groupPrefix + "grupp")}`, BlockTypes);
+        super(level, `Placera ut ${plural(numShapes, groupPrefix + "grupp")}`, BlockTypes);
         this.numShapes = numShapes;
         this.remaining = numShapes;
         this.shapeTypeRestriction = shapeTypeRestriction;
