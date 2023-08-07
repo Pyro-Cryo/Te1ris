@@ -291,7 +291,7 @@ class TetrisController extends Controller {
 						/*onSuccess=*/() => {
 							Controller.instance.bestScore = score;
 							Controller.instance.saveState();
-							alert(`Rapporterade in ${score} poäng!`);
+							console.log(`Rapporterade in ${score} poäng!`);
 						},
 					);
 				}
@@ -475,8 +475,7 @@ class TetrisController extends Controller {
 			new ModalButton("Spela igen", "\ue042", () => this.restart()),
 		];
 		const score = this.level.score;
-		// TODO: Ta bort alert!
-		ScoreReporter.report(score, /*onSuccess=*/() => alert(`Rapporterade in ${score} poäng!`));
+		ScoreReporter.report(score, /*onSuccess=*/() => console.log(`Rapporterade in ${score} poäng!`));
 		// Detta kanske kan klassas som BM, men det hjälper säkert någon.
 		if (score < 100) {
 			buttons.push(
@@ -579,8 +578,7 @@ class TetrisController extends Controller {
 			timeSentence = `Du klarade det på ${formatTimestamp(totalTime)} (men ditt personbästa är ${formatTimestamp(this.bestTotalTime)}).`;
 		}
 		const score = this.level.score;
-		// TODO: Ta bort alert!
-		ScoreReporter.report(score, /*onSuccess=*/() => alert(`Rapporterade in ${score} poäng!`));
+		ScoreReporter.report(score, /*onSuccess=*/() => console.log(`Rapporterade in ${score} poäng!`));
 
 		this.displayModal(
 			buttons,
