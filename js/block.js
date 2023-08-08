@@ -1,11 +1,19 @@
 "use strict";
 
-const FADDER_GROUPS = [
+let FADDER_GROUPS = [
     // Mapp, antal filer (1.png-N.png) i mappen.
-    ["fjadrande", 5],
-    ["fohsare", 9],
-    ["gamlingar", 4]
+    ["fjadrande", 4],
+    ["flortiga", 2],
+    ["gamlingar", 3],
+    ["maskotar", 3],
+    ["misc", 4],
+    ["ordf", 4],
 ];
+if (new Date().getHours() === 12) {
+    // Ordförande ska firas kl 12 varje dag.
+    FADDER_GROUPS = FADDER_GROUPS.filter(group => group[0] === "ordf");
+    console.log('Ja må han leva');
+}
 const FADDER_IMAGES = new Map(
     FADDER_GROUPS.map(spec => [
         spec[0],
@@ -16,7 +24,7 @@ const FADDER_IMAGES = new Map(
 );
 
 class Block extends EffectObject {
-    static get scale() { return 0.10; }
+    static get scale() { return 0.115; }
     static get adjectiveSingular() { return "vanlig"; }
     static get adjectivePlural() { return "vanliga"; }
 
@@ -290,7 +298,7 @@ const sunglassesImage = Resource.addAsset('img/glasögon.png');
 class SunglassEffect extends ScalingEffect {
     static get image() { return Resource.getAsset(sunglassesImage); }
     static get scale() { return 0.05; }
-    static get imgOffset() { return [null, null]; }
+    static get imgOffset() { return [0, -2]; }
 }
 
 class ShadedBlock extends Block {
