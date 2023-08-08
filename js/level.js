@@ -300,6 +300,7 @@ const ZAPPING_TOTAL_ANIMATION_TIME = 1500;
 const AISLE_LEFT = 'AISLE_LEFT';
 const AISLE_RIGHT = 'AISLE_RIGHT';
 const MAX_SCORE = 2000;
+const SHAPE_PREVIEW_LOCATION = [150, 50];
 
 class Row extends GameObject {
 	constructor(index, scale) {
@@ -411,6 +412,10 @@ class Level extends GameObject {
 		/** @type {?Shape} */
 		this.currentShape = null;
 		this.shapePool = new InfiniteBag(SHAPES, /*copies=*/2);
+		this.shapePreview = new ShapePreview(
+			SHAPE_PREVIEW_LOCATION[0],
+			SHAPE_PREVIEW_LOCATION[1],
+		);
 		this.spawnShape();
 		this.MOVE_TIME = 2000;
 		this.moveTimer = 2000;
@@ -747,6 +752,7 @@ class Level extends GameObject {
 			/*level=*/this,
 			/*onCannotCreate=*/() => {
 				this.currentShape = null;
+				this.shapePreview.updateShapeType(null);
 				setCurrentShape = false;
 				Controller.instance.showGameOver();
 			},
@@ -755,6 +761,7 @@ class Level extends GameObject {
 
 		if (setCurrentShape) {
 			this.currentShape = spawned;
+			this.shapePreview.updateShapeType(this.nextShape());
 		}
 	}
 

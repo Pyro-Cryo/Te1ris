@@ -53,21 +53,9 @@ class Shape extends GameObject {
      */
     static selectBlockImages(BlockTypes) {
         // TODO: Se till att t.ex. frågvisa block alltid väljer gruppen med frågvisa fadderiet.
-        const [group, numImages] = FADDER_GROUPS[Math.floor(Math.random() * FADDER_GROUPS.length)];
-        if (numImages < 1) {
-            throw new Error(`No images for selected group: ${group}`);
-        }
-        const fadderGroup = FADDER_IMAGES.get(group);
-        const imageIndices = new Array(numImages).fill(0).map((_, i) => i);
-        return BlockTypes.map(_ => {
-            let imageIndex;
-            if (imageIndices.length === 1) {
-                imageIndex = imageIndices[0];
-            } else {
-                [imageIndex] = imageIndices.splice(Math.floor(Math.random() * imageIndices.length), 1);
-            }
-            return Resource.getAsset(fadderGroup[imageIndex]);
-        });
+        const [group, _] = FADDER_GROUPS[Math.floor(Math.random() * FADDER_GROUPS.length)];
+        const images = new InfiniteBag(FADDER_IMAGES.get(group));
+        return BlockTypes.map(_ => Resource.getAsset(images.pop()));
     }
 
     /**
@@ -277,3 +265,98 @@ class ShapeZ extends Shape {
 const SHAPES = [
     ShapeI, ShapeO, ShapeT, ShapeJ, ShapeL, ShapeS, ShapeZ
 ];
+
+class ShapePreview extends GameObject {
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {typeof Shape} ShapeType
+     */
+    constructor(x, y, ShapeType = null) {
+        super(x, y);
+        this._drawTextToImage("Nästa grupp:");
+        this.coords = null;
+        this.images = null;
+        this.blockScale = 0.2;
+        this.blockSpacing = 50;
+        this.updateShapeType(ShapeType);
+    }
+
+    _drawTextToImage(text) {
+        let height = 32;
+        const font = `bold ${height}px Nunito, sans-serif`;
+        const baseline = "bottom";
+        const color = "#222222";
+        
+        const canvas = document.createElement("canvas");
+        let ctx = canvas.getContext("2d");
+        ctx.font = font;
+        ctx.textBaseline = baseline;
+
+        // Finns risk att Ä och liknande sticker ut, så mät om möjligt och multiplicera med en faktor.
+        const metrics = ctx.measureText(text);
+        if ("actualBoundingBoxAscent" in metrics && "actualBoundingBoxDescent" in metrics) {
+            height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+        }
+        canvas.width = metrics.width;
+        canvas.height = height * 1.5;
+        if (canvas.width === 0 || canvas.height === 0) return;
+
+        ctx = canvas.getContext("2d");  // Vi har skalat om canvasen, så vi behöver ny context.
+        ctx.font = font;
+        ctx.textBaseline = baseline
+        ctx.fillStyle = color;
+        ctx.fillText(text, 0, canvas.height);
+
+        this.image = canvas;
+    }
+
+    /**
+     * @param {?typeof Shape} ShapeType 
+     */
+    updateShapeType(ShapeType) {
+        if (ShapeType === null) {
+            this.coords = null;
+            this.images = null;
+            return;
+        }
+
+        const maxRowOffset = Math.max(...ShapeType.blockCoords.map(pos => pos[0])) + 1;
+        const cols = ShapeType.blockCoords.map(pos => pos[1]);
+        const colCenter = (Math.max(...cols) + Math.min(...cols)) / 2;
+        this.coords = ShapeType.blockCoords.map(
+            pos => [
+                (maxRowOffset - pos[0]) * this.blockSpacing,
+                (pos[1] - colCenter) * this.blockSpacing,
+            ]);
+
+        const GuessedBlockType = Controller.instance.level?.objective?.blockPool?.peek() ?? Block;
+        this.images = ShapeType.selectBlockImages(
+            new Array(this.coords.length).fill(GuessedBlockType)
+        ).map(image => {
+            const renderingObject = new PrerenderedObject(image, /*angle=*/null, this.blockScale);
+            renderingObject.prerender();
+            return renderingObject.imagecache;
+        });
+    }
+
+    /**
+     * @param {GameArea} gameArea 
+     */
+    draw(gameArea) {
+        if (!this.images || !this.coords) return;
+        super.draw(gameArea);
+        for (let i = 0; i < this.images.length; i++) {
+            const [yOffset, xOffset] = this.coords[i];
+            const image = this.images[i];
+
+            gameArea.draw(
+                image,
+                this.x + xOffset,
+                this.y + yOffset,
+                /*angle=*/0,
+                /*scale=*/1,
+            );
+        }
+    }
+}
