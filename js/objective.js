@@ -264,3 +264,17 @@ class ZapNSleepyBlocksWithIntroductionObjective extends ZapNBlocksObjective {
         }
     }
 }
+
+class ZapNBlocksWithFragvisaIntroductionObjective extends ZapNBlocksObjective {
+    static get BlockTypes() { return new Map([[Block, 6], [FragvisBlock, 1]]); }
+
+    constructor(level, numBlocks, BlockTypes = null) {
+        super(level, numBlocks, BlockTypes);
+    }
+
+    maybeShowIntroduction() {
+        if (Controller.instance.hasSeenBlockIntroduction.indexOf(FragvisBlock.name) === -1) {
+            Controller.instance.showBlockIntroduction(FragvisBlock);
+        }
+    }
+}

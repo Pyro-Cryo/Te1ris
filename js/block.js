@@ -5,7 +5,7 @@ let FADDER_GROUPS = [
     ["fjadrande", 4],
     ["flortiga", 2],
     ["gamlingar", 3],
-    ["maskotar", 3],
+    ["maskotar", 4],
     ["misc", 4],
     ["ordf", 4],
 ];
@@ -21,6 +21,9 @@ const FADDER_IMAGES = new Map(
             (_, i) => Resource.addAsset(`img/faddrar/${spec[0]}/${i+1}.png`)
         )
     ])    
+);
+const FRAGVISA_IMAGES = new Array(4).fill(0).map(
+    (_, i) => Resource.addAsset(`img/faddrar/fragvisa/${i+1}.png`)
 );
 
 class Block extends EffectObject {
@@ -77,6 +80,10 @@ class Block extends EffectObject {
             return;
         this._row = value;
         this.layer = this.rowToLayer(value);
+    }
+
+    get isWalking() {
+        return this.walkingPathRowColumn !== null;
     }
 
     /**
@@ -198,7 +205,9 @@ class Block extends EffectObject {
         return true;
     }
 
-    onPathCompleted() {}
+    onPathCompleted() {
+        this.level.checkCompleteRows();
+    }
 
     /**
      * Trigger the block to fall down a row or otherwise do its
@@ -563,5 +572,59 @@ class RudeBlock extends Block {
         super.onSettle();
         this.jacketEffect.onSettle(this);
         this.backpackEffect.onSettle(this);
+    }
+}
+
+const fragvisImage = Resource.addAsset("img/fragvis.png");
+
+class FragvisEffect extends ScalingEffect {
+    static get image() { return Resource.getAsset(fragvisImage); }
+    static get scale() { return 0.075; }
+    static get imgOffset() { return [8, -10]; }
+}
+
+class FragvisBlock extends Block {
+    static get adjectiveSingular() { return "Frågvis"; }
+    static get adjectivePlural() { return "Frågvisa"; }
+
+    constructor(row, column, level, image) {
+        super(row, column, level, image);
+        this.hasMovedForward = false;
+        this.addEffect(new FragvisEffect());
+    }
+
+    onSettle() {
+        super.onSettle();
+        if (this.hasMovedForward) return;
+
+        // Det här kanske blir för starkt, så eventuellt vill man begränsa platserna de kan nå
+        // genom att använda this.level.backtrackingMatrixFrom(this.row, this.column);
+        for (let row = 0; row < this.row; row++) {
+            const candidates = [];
+            for (let column = 0; column < this.level.numColumns; column++) {
+                if (this.level.occupied[row][column]) continue;
+                // Prioritize filling seats that are hard to get to (i.e. where the nearby seats are occupied).
+                const seatAboveOccupied = !this.level.isFree(row + 1, column);
+                const leftSeatOccupied = !this.level.isFree(row, column - 1);
+                const rightSeatOccupied = !this.level.isFree(row, column + 1);
+                candidates.push({
+                    row: row,
+                    column: column,
+                    score: 10 * seatAboveOccupied + leftSeatOccupied + rightSeatOccupied,
+                });
+            }
+
+            if (candidates.length !== 0) {
+                const bestCandidate = candidates.reduce(
+                    (best, current) => current.score > best.score ? current : best
+                );
+                const path = this.level.simplePathBetween(
+                    this.row, this.column, bestCandidate.row, bestCandidate.column
+                );
+                this.walkPath(path);
+                this.hasMovedForward = true;
+                return;
+            }
+        }
     }
 }

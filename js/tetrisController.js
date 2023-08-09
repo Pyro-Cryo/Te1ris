@@ -520,6 +520,10 @@ class TetrisController extends Controller {
 				name = "Cool fadder";
 				message = "Man kan vara cool utan solglasögon, men det är dumt att chansa. En del är så coola att de har på sig solglasögon inomhus. Somliga påstår att Föhseriet är så coola att de sover i solglasögon, andra att de inte sover överhuvudtaget. Säkert är iallafall att solglasögon skyddar mot Föhseriets ljungeldsblick, åtminstone en (1) gång.";
 				break;
+			case FragvisBlock:
+				name = "Frågvis fadderist";
+				message = "Frågvisa Fadderiet gör inte bara inspring i rasterna - de går på föreläsningar också! För att kunna ställa så många frågor som möjligt försöker de flytta sig så långt fram det bara går. Då blir stäckan ljudet behöver färdas mycket kortare, och de kan få svar upp till 100 ms snabbare!";
+				break;
 			default:
 				console.error(`Det finns ingen introduktion för blocktyp ${BlockType.name}`)
 				return;

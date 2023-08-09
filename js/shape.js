@@ -52,10 +52,12 @@ class Shape extends GameObject {
      * @param {(typeof Block)[]} BlockTypes 
      */
     static selectBlockImages(BlockTypes) {
-        // TODO: Se till att t.ex. frågvisa block alltid väljer gruppen med frågvisa fadderiet.
         const [group, _] = FADDER_GROUPS[Math.floor(Math.random() * FADDER_GROUPS.length)];
         const images = new InfiniteBag(FADDER_IMAGES.get(group));
-        return BlockTypes.map(_ => Resource.getAsset(images.pop()));
+        const fragvisaImages = new InfiniteBag(FRAGVISA_IMAGES);
+        return BlockTypes.map(BlockType => Resource.getAsset(
+            BlockType === FragvisBlock ? fragvisaImages.pop() : images.pop()
+        ));
     }
 
     /**
