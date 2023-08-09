@@ -31,6 +31,8 @@ function rotateArrayAround(arr, rowPivot, columnPivot, clockwise) {
     }
 }
 
+const fadderGroupsBag = new InfiniteBag(FADDER_GROUPS.map(x => x[0]), /*copies=*/2);
+
 /**
  * https://en.wikipedia.org/wiki/Tetromino#One-sided_tetrominoes
  */
@@ -51,8 +53,8 @@ class Shape extends GameObject {
     /**
      * @param {(typeof Block)[]} BlockTypes 
      */
-    static selectBlockImages(BlockTypes) {
-        const [group, _] = FADDER_GROUPS[Math.floor(Math.random() * FADDER_GROUPS.length)];
+    static selectBlockImages(BlockTypes, peekGroup = false) {
+        const group = peekGroup ? fadderGroupsBag.peek() : fadderGroupsBag.pop();
         const images = new InfiniteBag(FADDER_IMAGES.get(group));
         const fragvisaImages = new InfiniteBag(FRAGVISA_IMAGES);
         return BlockTypes.map(BlockType => Resource.getAsset(
@@ -334,7 +336,8 @@ class ShapePreview extends GameObject {
 
         const GuessedBlockType = Controller.instance.level?.objective?.blockPool?.peek() ?? Block;
         this.images = ShapeType.selectBlockImages(
-            new Array(this.coords.length).fill(GuessedBlockType)
+            new Array(this.coords.length).fill(GuessedBlockType),
+            /*peekGroup=*/true,
         ).map(image => {
             const renderingObject = new PrerenderedObject(image, /*angle=*/null, this.blockScale);
             renderingObject.prerender();
