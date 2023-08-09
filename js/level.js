@@ -838,6 +838,7 @@ class Level extends GameObject {
 			return;
 
 		const completed_rows = this.getCompleteRows();
+		if (completed_rows.length === 0) return;
 		// Animate the zapping of the blocks.
 		Fohs.zapRows(completed_rows);
 

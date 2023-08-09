@@ -602,7 +602,7 @@ class FragvisBlock extends Block {
         for (let row = 0; row < this.row; row++) {
             const candidates = [];
             for (let column = 0; column < this.level.numColumns; column++) {
-                if (this.level.occupied[row][column]) continue;
+                if (!this.level.isFree(row, column)) continue;
                 // Prioritize filling seats that are hard to get to (i.e. where the nearby seats are occupied).
                 const seatAboveOccupied = !this.level.isFree(row + 1, column);
                 const leftSeatOccupied = !this.level.isFree(row, column - 1);
