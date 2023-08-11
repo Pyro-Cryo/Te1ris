@@ -19,7 +19,7 @@ class Controller {
 
     static get WIDTH_PX() { return 1024; }
     static get HEIGHT_PX() { return this.WIDTH_PX * 2 / 3; }
-    static get STORAGE_PREFIX() { return "_kelvin"; }
+    static get STORAGE_PREFIX() { return "kelvin_"; }
 
     constructor(
             canvas,
@@ -29,7 +29,7 @@ class Controller {
             gridOrigin = GameArea.GRID_ORIGIN_UPPER_LEFT,
             fastForwardFactor = 3,
             cancelFFOnPause = false,
-            musicFF = true,
+            // musicFF = true,
     ) {
         if (typeof (canvas) === "string")
             canvas = document.getElementById(canvas);
@@ -82,10 +82,19 @@ class Controller {
             this.difficultySelect.onchange = this.onDifficultyChange.bind(this);
 
         // Soundtrack stuff.
-        this.currentMusic = null;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        /** @type {AudioContext} */
+        this.audioContext = new AudioContext();
+        this.audioContext.suspend();
         this.volume = 0.1;
-        this.musicSpeedupOnFF = musicFF;
-        this.muted = !!window.localStorage.getItem(this.constructor.STORAGE_PREFIX + "mute");
+        this.audioContextGain = new GainNode(this.audioContext, {
+            gain: this.volume
+        });
+        this.audioContextGain.connect(this.audioContext.destination);
+        this.audioContextSource = null;
+        this.audioContextSuspendingTimeout = null;
+        // this.musicSpeedupOnFF = musicFF;
+        this.muted = JSON.parse(window.localStorage.getItem(this.constructor.STORAGE_PREFIX + "mute"));
         if (this.muteButton)
             this.muteButton.addEventListener("click", e => {this.onMute(); e.preventDefault();});
         if (this.unmuteButton)
@@ -155,61 +164,80 @@ class Controller {
         }
     }
 
-    setMusic(source){
-        let isplaying = false;
-        if (this.currentMusic){
-            isplaying = this.currentMusic.paused;
-            this.currentMusic.pause();
+    setMusic(source, loopStart = 0, loopEnd = null) {
+        if (source instanceof Audio) {
+            this.audioContextSource = this.audioContext.createMediaElementSource(source);
+            this.audioContextSource.connect(this.audioContextGain);
+            source.play();
+        } else if (source instanceof ArrayBuffer) {
+            this.audioContext.decodeAudioData(source).then(audioBuffer => {
+                this.audioContextSource = new AudioBufferSourceNode(this.audioContext, {
+                    buffer: audioBuffer,
+                    loop: true,
+                    loopStart: loopStart,
+                    loopEnd: loopEnd ?? audioBuffer.duration,
+                });
+                this.audioContextSource.connect(this.audioContextGain);
+                this.audioContextSource.start();
+            });
+        } else {
+            throw new Error(`Invalid type of music source: ${source} (${source.constructor.name})`);
         }
-        this.currentMusic = source;
-        if (this.muted)
-            this.currentMusic.volume = 0;
-        else
-            this.currentMusic.volume = this.volume;
-        if (isplaying)
-            this.onMusicPlay();
-        if (this.isFF)
-            this.currentMusic.playbackRate = Math.sqrt(this.fastForwardFactor);
+        // if (this.isFF)
+        //     this.currentMusic.playbackRate = Math.sqrt(this.fastForwardFactor);
     }
 
-    onMusicPlay(){
-        if (this.currentMusic)
-            this.currentMusic.play();
-    }
-    onMusicPause(){
-        if (this.currentMusic)
-            this.currentMusic.pause();
-    }
-    setVolume(volume){
-        if (volume === 0){
-            this.onMute();
-            return;
+    onMusicPlay() {
+        if (this.audioContextSuspendingTimeout !== null) {
+            clearTimeout(this.audioContextSuspendingTimeout);
+            this.audioContextSuspendingTimeout = null;
         }
-        this.volume = volume;
-        if (this.muted)
-            this.unMute();
-        else if (this.currentMusic)
-            this.currentMusic.volume = volume;
+        if (this.audioContext.state !== "running") {
+            this.audioContext.resume();
+        }
+        this.audioContextGain.gain.setValueAtTime(
+            this.muted ? 0 : this.volume, this.audioContext.currentTime + 0.5
+        );
     }
-    onMute() {
-        if (this.currentMusic)
-            this.currentMusic.volume = 0;
+    onMusicPause() {
+        this.audioContextGain.gain.setValueAtTime(
+            0, this.audioContext.currentTime + 0.5
+        );
+        if (this.audioContext.state === "running" && this.audioContextSuspendingTimeout === null) {
+            this.audioContextSuspendingTimeout = setTimeout(
+                () => this.audioContext.suspend(), 0.75
+            );
+        }
+    }
+    setVolume(volume) {
+        this.volume = volume;
+        if (!this.muted) {
+            this.audioContextGain.gain.linearRampToValueAtTime(
+                volume, this.audioContext.currentTime + 0.5
+            );
+        }
+    }
+    onMute(ramp = true) {
+        this.onMusicPause();
+        if (!ramp)
+            this.audioContextGain.gain.setValueAtTime(0, this.audioContext.currentTime);
         if (this.muteButton)
             this.muteButton.classList.add("hidden");
         if (this.unmuteButton)
             this.unmuteButton.classList.remove("hidden");
         this.muted = true;
-        window.localStorage.setItem(this.constructor.STORAGE_PREFIX + "mute", this.muted);
+        window.localStorage.setItem(this.constructor.STORAGE_PREFIX + "mute", JSON.stringify(this.muted));
     }
     onUnMute() {
-        if (this.currentMusic)
-            this.currentMusic.volume = this.volume;
+        this.audioContextGain.gain.linearRampToValueAtTime(
+            this.volume, this.audioContext.currentTime + 0.5
+        );
         if (this.muteButton)
             this.muteButton.classList.remove("hidden");
         if (this.unmuteButton)
             this.unmuteButton.classList.add("hidden");
         this.muted = false;
-        window.localStorage.setItem(this.constructor.STORAGE_PREFIX + "mute", this.muted);
+        window.localStorage.setItem(this.constructor.STORAGE_PREFIX + "mute", JSON.stringify(this.muted));
     }
 
     onPlay() {
@@ -252,16 +280,16 @@ class Controller {
         this.isFF = true;
         if (this.ffbutton)
             this.ffbutton.classList.add("keptPressed");
-        if (this.musicSpeedupOnFF && this.currentMusic)
-            this.currentMusic.playbackRate = Math.sqrt(this.fastForwardFactor);
+        // if (this.musicSpeedupOnFF && this.currentMusic)
+        //     this.currentMusic.playbackRate = Math.sqrt(this.fastForwardFactor);
     }
 
     offFastForward() {
         this.isFF = false;
         if (this.ffbutton)
             this.ffbutton.classList.remove("keptPressed");
-        if (this.musicSpeedupOnFF && this.currentMusic)
-            this.currentMusic.playbackRate = 1
+        // if (this.musicSpeedupOnFF && this.currentMusic)
+        //     this.currentMusic.playbackRate = 1;
     }
 
     setMessage(message, pureText = true) {

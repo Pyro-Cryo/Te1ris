@@ -74,6 +74,15 @@ class Resource {
 						reject(response);
 				}).catch(reason => reject(reason));
 			});
+		else if (type === ArrayBuffer)
+			promise = new Promise((resolve, reject) => {
+				fetch(path).then(response => {
+					if (response.ok)
+						resolve(response.arrayBuffer());
+					else
+						reject(response);
+				}).catch(reason => reject(reason));
+			});
 		else
 			promise = new Promise((resolve, reject) => {
 				try {

@@ -1,6 +1,8 @@
 "use strict";
 
-const music = Resource.addAsset("audio/myrstacken.mp3", LoopableAudioWithTail);
+const MUSIC = Resource.addAsset("audio/myrstacken.mp3", ArrayBuffer);
+const MUSIC_LOOP_START = 94.17219;
+const MUSIC_LOOP_END = 149.80133;
 const REMOVE_ON_MODAL_CLOSE = 'removeOnModalClose';
 
 class ModalButton {
@@ -145,14 +147,7 @@ class TetrisController extends Controller {
 		super.onAssetsLoaded();
 		this.clearOnDraw = false;
 		this.setMessage(`Laddat klart`);
-		this.setMusic(Resource.getAsset(music));
-		if (this.muted) {
-			this.currentMusic.volume = 0;
-			if (this.muteButton)
-				this.muteButton.classList.add("hidden");
-			if (this.unmuteButton)
-				this.unmuteButton.classList.remove("hidden");
-		}
+		this.setMusic(Resource.getAsset(MUSIC), MUSIC_LOOP_START, MUSIC_LOOP_END);
 		this.startDrawLoop();
 		this.loadState();
 		this.createLevel();
@@ -320,7 +315,7 @@ class TetrisController extends Controller {
 			bestTotalTime: -1,
 			bestScore: -1,
 		};
-		let data = window.localStorage.getItem(this.STORAGE_PREFIX + "state");
+		let data = window.localStorage.getItem(this.constructor.STORAGE_PREFIX + "state");
 		if (data)
 			data = JSON.parse(data);
 		else
@@ -342,12 +337,12 @@ class TetrisController extends Controller {
 		for (const prop of this.stateProperties)
 			data[prop] = this[prop];
 
-		window.localStorage.setItem(this.STORAGE_PREFIX + "state", JSON.stringify(data));
+		window.localStorage.setItem(this.constructor.STORAGE_PREFIX + "state", JSON.stringify(data));
 		// console.log("Saved state", data);
 	}
 
 	clearState() {
-		window.localStorage.removeItem(this.STORAGE_PREFIX + "state");
+		window.localStorage.removeItem(this.constructor.STORAGE_PREFIX + "state");
 	}
 
 	setObjectiveShortDescription(message) {
@@ -371,11 +366,9 @@ class TetrisController extends Controller {
 			this.objective.root.classList.remove("hidden");
 		}
 		this.closeModal();
-		if (!this.currentMusic) {
-			this.currentMusic = Resource.getAsset(music);
-			this.currentMusic.currentTime = 0;
+		if (!this.muted) {
+			this.onMusicPlay();
 		}
-		this.currentMusic.play();
 	}
 
 	onPause() {
@@ -387,7 +380,7 @@ class TetrisController extends Controller {
 				new TogglableModalButton(
 					"Tysta musik",
 					"\ue04f",
-					() => this.onMute(),
+					() => this.onMute(/*ramp=*/false),
 					"Sätt på musik",
 					"\ue050",
 					() => this.onUnMute(),
@@ -395,15 +388,13 @@ class TetrisController extends Controller {
 				)
 			]
 		);
-		if (this.currentMusic)
-			this.currentMusic.pause();
+		this.onMusicPause();
 	}
 
 	showControls(label = null, icon = null, onClick = null) {
 		if (!this.isPaused) {
 			super.onPause();
-			if (this.currentMusic)
-				this.currentMusic.pause();
+			this.onMusicPause();
 		}
 		label ??= "Fortsätt";
 		icon ??= "\ue037";
@@ -454,22 +445,20 @@ class TetrisController extends Controller {
 			);
 		};
 		displayNext();
-		if (this.currentMusic)
-			this.currentMusic.pause();
+		this.onMusicPause();
 	}
 
 	restart() {
 		this.unregisterAllObjects();
 		this.createLevel();
-		this.currentMusic.currentTime = 0;
+		this.setMusic(Resource.getAsset(MUSIC), MUSIC_LOOP_START, MUSIC_LOOP_END);
 		this.onPlay();
 	}
 
 	showGameOver() {
 		if (!this.isPaused) {
 			super.onPause();
-			if (this.currentMusic)
-				this.currentMusic.pause();
+			this.onMusicPause();
 		}
 		const buttons = [
 			new ModalButton("Spela igen", "\ue042", () => this.restart()),
@@ -542,15 +531,13 @@ class TetrisController extends Controller {
 			new BlockIntroduction(BlockType, name, message),
 			'Ny faddertyp'
 		);
-		if (this.currentMusic)
-			this.currentMusic.pause();
+		this.onMusicPause();
 	}
 
 	showYouWon(totalTime) {
 		if (!this.isPaused) {
 			super.onPause();
-			if (this.currentMusic)
-				this.currentMusic.pause();
+			this.onMusicPause();
 		}
 		const buttons = [
 			new ModalButton("Spela vidare", "\ue037", () => this.onPlay()),
