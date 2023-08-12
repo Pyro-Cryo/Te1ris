@@ -3,13 +3,13 @@
 let FADDER_GROUPS = [
     // Mapp, antal filer (1.png-N.png) i mappen.
     ["fjadrande", 4],
-    ["flortiga", 2],
-    ["gamlingar", 3],
+    // ["flortiga", 2],
+    // ["gamlingar", 3],
     ["maskotar", 4],
-    ["misc", 4],
+    ["misc", 11],
     ["ordf", 4],
 ];
-if (new Date().getHours() === 12) {
+if (new Date().getHours() === 12 && new Date().getMinutes() < 15) {
     // Ordförande ska firas kl 12 varje dag.
     FADDER_GROUPS = FADDER_GROUPS.filter(group => group[0] === "ordf");
     console.log('Ja må han leva');

@@ -31,7 +31,11 @@ function rotateArrayAround(arr, rowPivot, columnPivot, clockwise) {
     }
 }
 
-const fadderGroupsBag = new InfiniteBag(FADDER_GROUPS.map(x => x[0]), /*copies=*/2);
+const fadderGroupsBag = new InfiniteBag(
+    // Misc innehåller fler bilder, så se till att den används mer.
+    FADDER_GROUPS.map(x => x[0]).concat(["misc", "misc"]),
+    /*copies=*/2,
+);
 
 /**
  * https://en.wikipedia.org/wiki/Tetromino#One-sided_tetrominoes
