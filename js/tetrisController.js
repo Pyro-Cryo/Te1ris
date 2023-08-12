@@ -1,8 +1,8 @@
 "use strict";
 
 const MUSIC = Resource.addAsset("audio/myrstacken.mp3", ArrayBuffer);
-const MUSIC_LOOP_START = 94.17219;
-const MUSIC_LOOP_END = 149.80133;
+const MUSIC_LOOP_START = 72.000;
+const MUSIC_LOOP_END = null;
 const REMOVE_ON_MODAL_CLOSE = 'removeOnModalClose';
 
 class ModalButton {
