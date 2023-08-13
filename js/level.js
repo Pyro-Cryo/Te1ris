@@ -424,6 +424,9 @@ class Level extends GameObject {
 		this.CHECK_COMPLETE_ROWS_TIME = 1000;
 		this.checkCompleteRowsTimer = -1;
 		this.zapTimeout = null;
+
+		this.CHECK_UNCLAIMED_BLOCKS_TIME = 1000;
+		this.checkUnclaimedBlocksTimer = 1000;
 	}
 
 	/**
@@ -450,6 +453,54 @@ class Level extends GameObject {
 			}
 		} else if (this.zapTimeout === null) {
 			this.objective.maybeShowIntroduction();
+		}
+		this.checkUnclaimedBlocksTimer -= delta;
+		if (this.checkUnclaimedBlocksTimer < 0) {
+			this.checkUnclaimedBlocksTimer += this.CHECK_UNCLAIMED_BLOCKS_TIME;
+
+			// Det här är så korkat men jag lyckas verkligen inte lista ut varför det händer.
+			// Ibland försvinner block som redan har landat ut ur Level.settledBlocks/occupied.
+			// Verkar framförallt ske när Frågvisa faddrar är med, men hittar inte någon direkt 
+			// koppling till dem. Verkar nästan bara ske på rad 0, kolumn 8 - den är iallafall
+			// väldigt överrepresenterad när jag försöker återskapa det. Fattar inte om det är
+			// problem med nedflyttningslogiken, runtpromenerandet, någon slags resolve order
+			// mellan blocken när en shape landar, en blandning av alltihopa, eller vad.
+			// Hursomhelst verkar det funka att bara kolla efter block som är reggade hos
+			// controllern, men ingen annan ansvarar för, och peta in dem i leveln igen.
+			// TODO: Felsök mer.
+			try {
+				const unclaimed = new Set();
+				for (const layer of Controller.instance.layers) {
+					for (const obj of layer) {
+						if (obj instanceof Block && !obj.hasLeftMap) {
+							unclaimed.add(obj)
+						}
+					}
+				}
+				for (const row of this.settledBlocks) {
+					for (const block of row) {
+						unclaimed.delete(block);
+					}
+				}
+				for (const block of this.currentShape?.blocks ?? []) {
+					unclaimed.delete(block);
+				}
+				if (unclaimed.size !== 0) {
+					console.error('Unclaimed blocks:', unclaimed);
+					for (const block of unclaimed) {
+						if (this.isInMap(block.row, block.column) && this.isFree(block.row, block.column)) {
+							console.warn(`Adding block to map at row ${block.row} column ${block.column}`, block);
+							this.settledBlocks[block.row][block.column] = block;
+							this.occupied[block.row][block.column] = true;
+						} else {
+							console.error(block, 'is outside of map, or on an occupied space, and will be deleted');
+							block.despawn();
+						}
+					}
+				}
+			} catch (e) {
+				console.error('Error when checking for unclaimed blocks:', e);
+			}
 		}
 	}
 

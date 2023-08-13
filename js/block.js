@@ -53,6 +53,7 @@ class Block extends EffectObject {
         this.updatePositionAndRescale();
         this.isSettled = false;
         this.isChangingLayer = false;
+        this.hasLeftMap = false;
     }
 
     rowToLayer(row) {
@@ -102,6 +103,7 @@ class Block extends EffectObject {
         this.level.occupied[this.row][this.column] = true;
         this.level.settledBlocks[this.row][this.column] = this;
         this.scale = this.baseScale * this.level.getScale(this.row, this.column);
+        this.hasLeftMap = false;
     }
 
     removeFromMap() {
@@ -109,6 +111,7 @@ class Block extends EffectObject {
             this.level.occupied[this.row][this.column] = false;
             this.level.settledBlocks[this.row][this.column] = null;
         }
+        this.hasLeftMap = true;
     }
 
     update(delta) {
@@ -189,6 +192,7 @@ class Block extends EffectObject {
     despawn() {
         this.level.settledBlocks[this.row][this.column] = null;
         this.level.occupied[this.row][this.column] = false;
+        this.hasLeftMap = true;
         super.despawn();
     }
 
@@ -529,8 +533,8 @@ class RudeEffect extends ScalingEffect {
         const obstacleColumn = block.column + (this.left ? -1 : 1);
         if (block.level.isFree(block.row, obstacleColumn)) {
             const obstacle = new Block(block.row, obstacleColumn, block.level, this.constructor.image);
-            block.level.occupied[block.row][obstacleColumn] = true;
-            block.level.settledBlocks[block.row][obstacleColumn] = obstacle;
+            obstacle.level.occupied[obstacle.row][obstacle.column] = true;
+            obstacle.level.settledBlocks[obstacle.row][obstacle.column] = obstacle;
             obstacle.baseScale = this.baseScale * this.scaleMultiplierWhenSettled;
             obstacle.scale = this.scale * this.scaleMultiplierWhenSettled;
             obstacle.angle = this.angle * 3;
