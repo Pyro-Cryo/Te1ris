@@ -86,7 +86,7 @@ class TetrisController extends Controller {
 		this.level = null;
 		this.touchControls = new TouchControls(
 			/*element=*/this.gameArea.canvas,
-			/*allowedElements=*/new Set([this.gameArea.canvas, document.documentElement]),
+			/*allowTouch=*/touch => !this.isModalOpen && touch.clientY > this.barHeight,
 			/*onTap=*/(x, y) => {
 				if (!this.level || !this.level.currentShape) return;
 				if (y > document.documentElement.clientHeight / 2) {

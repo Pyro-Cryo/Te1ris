@@ -72,18 +72,18 @@ class TouchControls {
 
     /**
      * @param {HTMLElement} element 
-     * @param {Set<HTMLElement>} allowedElements
+     * @param {(touch: Touch) => boolean} allowTouch
      * @param {(x: number, y: number) => void} onTap 
      * @param {() => void} onSwipeDown 
      * @param {(xRelative: number) => void} onSwipeHorizontal 
      */
-    constructor(element = null, allowedElements = null, onTap = null, onSwipeDown = null, onSwipeHorizontal = null) {
+    constructor(element = null, allowTouch = null, onTap = null, onSwipeDown = null, onSwipeHorizontal = null) {
         this.element = element ?? document.body;
         document.documentElement.addEventListener("touchstart", this.onTouchStart.bind(this));
         document.documentElement.addEventListener("touchend", this.onTouchEnd.bind(this));
         document.documentElement.addEventListener("touchmove", this.onTouchMove.bind(this));
         document.documentElement.addEventListener("touchcancel", this.onTouchCancel.bind(this));
-        this.allowedElements = allowedElements ?? new Set([this.element]);
+        this.allowTouch = allowTouch ?? (touch => touch.target === this.element);
 
         /** @type {Map<number, Gesture>} */
         this.gestures = new Map();
@@ -128,7 +128,7 @@ class TouchControls {
         let preventDefault = false;
         const threshold = this.getSignificantMoveThreshold();
         for (const touch of event.changedTouches) {
-            if (this.allowedElements.has(touch.target)) {
+            if (this.allowTouch(touch)) {
                 this.gestures.set(touch.identifier, new Gesture(touch.clientX, touch.clientY, threshold));
                 preventDefault = true;
             }
