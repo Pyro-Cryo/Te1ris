@@ -33,7 +33,9 @@ function rotateArrayAround(arr, rowPivot, columnPivot, clockwise) {
 
 const fadderGroupsBag = new InfiniteBag(
     // Misc innehåller fler bilder, så se till att den används mer.
-    FADDER_GROUPS.map(x => x[0]).concat(["misc", "misc"]),
+    FADDER_GROUPS.map(x => x[0]).concat(
+        FADDER_GROUPS.some(x => x[0] === "misc") ? ["misc", "misc"] : []
+    ),
     /*copies=*/2,
 );
 
