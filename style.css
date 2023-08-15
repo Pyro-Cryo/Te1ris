@@ -81,6 +81,7 @@ body {
 	justify-content: center;
 	align-items: center;
 	color: white;
+	overflow-y: auto;
 }
 
 	.menu > div {
