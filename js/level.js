@@ -391,7 +391,7 @@ class Level extends GameObject {
 			// Sömniga faddrar kan totalkaosa.
 			() => new ZapNSleepyBlocksWithIntroductionObjective(this, 10, sleepyBlocksCommon),
 			() => new ClearNRowsSimultaneouslyObjective(this, 3, sleepyAndRudeAndFragvisaBlocks),
-			() => new SettleNShapesObjective(this, 15, sleepyAndRudeAndFragvisaBlocks),
+			() => new SettleNShapesObjective(this, 15, /*shapeTypeRestriction=*/null, sleepyAndRudeAndFragvisaBlocks),
 			
 			// Föhsare etc. TBA
 			() => new ClearSpecificRowObjective(this, 0, confusedBlocksOverrepresented),
