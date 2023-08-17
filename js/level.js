@@ -396,7 +396,7 @@ class Level extends GameObject {
 			// Föhsare etc. TBA
 			() => new ClearSpecificRowObjective(this, 0, confusedBlocksOverrepresented),
 			// Förvirrade block springer ju iväg snabbt, så behövs en del skicklighet för att zappa dem innan de drar.
-			() => new ZapNBlocksObjective(this, 4, confusedBlocksOverrepresented),
+			() => new ZapNBlocksObjective(this, 4, confusedBlocksOverrepresented, ConfusedBlock),
 			// Avsluta på topp med att cleara fyra rader samtidigt och se ÖF-dubletterna.
 			() => new ClearNRowsSimultaneouslyObjective(this, 4, allFiveKindsCommon),
 		];
