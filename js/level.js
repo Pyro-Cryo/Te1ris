@@ -961,7 +961,7 @@ class Level extends GameObject {
 			this.hasShownYouWon = true;
 		} else {
 			this.numCompletedBonusObjectives++;
-			this.MOVE_TIME = 2000 - Math.min(1500, 50 * this.numCompletedBonusObjectives);
+			this.MOVE_TIME = 2000 - Math.min(1500, 75 * this.numCompletedBonusObjectives);
 		}
 		
 		this.objective = this.randomObjective();
